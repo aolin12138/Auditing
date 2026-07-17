@@ -264,7 +264,7 @@ def audit_tree_bias(
                 if group.shape[0] > 1:
                     for point1 in group:
                         for point2 in group[i + 1 :]:
-                            distance += np.linalg.norm((point1, point2)).item()
+                            distance += np.linalg.norm(point1 - point2).item()
                             count += 1
                     distance = count / (distance + 1)
                     distances.append(distance)

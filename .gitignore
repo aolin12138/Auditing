@@ -10,3 +10,11 @@ wheels/
 .venv
 
 /data
+
+# Local scratch / superseded artifacts (kept out of the repo by choice)
+logs/
+_hsj_checkpoint.pkl
+_run_hsj_bias.py
+bug_report.md
+investigation_report.md
+nul
