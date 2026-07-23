@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    #vis.vega-embed {
+      width: 100%;
+      display: flex;
+    }
+
+    #vis.vega-embed details,
+    #vis.vega-embed details summary {
+      position: relative;
+    }
+  </style>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega@6"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-lite@6.4.1"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-embed@7"></script>
+</head>
+<body>
+  <div id="vis"></div>
+  <script>
+    (function(vegaEmbed) {
+      var spec = {"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}}, "data": {"name": "data-10af27ffaf5fb94e1763bcd0381f819c"}, "facet": {"field": "Combination", "sort": null, "title": null, "type": "nominal"}, "spec": {"layer": [{"mark": {"type": "line", "point": true, "strokeWidth": 2}, "encoding": {"color": {"field": "Combination", "legend": {"title": null}, "type": "nominal"}, "x": {"field": "Defect Level", "scale": {"domain": [0.05, 0.95]}, "title": "Coverage Gap (bias)", "type": "quantitative"}, "y": {"field": "Mean Distance", "type": "quantitative"}}}, {"mark": {"type": "line", "opacity": 0.5, "point": {"fill": "white", "filled": false}, "strokeDash": [4, 4], "strokeWidth": 1.5}, "encoding": {"color": {"field": "Combination", "type": "nominal"}, "x": {"field": "Defect Level", "scale": {"domain": [0.05, 0.95]}, "title": "Coverage Gap (bias)", "type": "quantitative"}, "y": {"field": "Accuracy", "scale": {"domain": [0.6, 1.05]}, "title": "Test Accuracy", "type": "quantitative"}}}], "data": {"name": "data-10af27ffaf5fb94e1763bcd0381f819c"}}, "columns": 3, "resolve": {"scale": {"y": "independent"}}, "title": {"text": "Coverage Gap: Clean Spread Increases While Accuracy Stays Flat", "fontSize": 14, "subtitle": "Mean pairwise distance with 95% CI error bars. Dashed lines show test accuracy."}, "$schema": "https://vega.github.io/schema/vega-lite/v6.4.1.json", "datasets": {"data-10af27ffaf5fb94e1763bcd0381f819c": [{"Combination": "DecisionTree + DTA", "Defect Level": 0.1, "Mean Distance": 0.4407830859923971, "CI": 0.009895623277298931, "Accuracy": 0.9490421455938698}, {"Combination": "DecisionTree + DTA", "Defect Level": 0.3, "Mean Distance": 0.49079801626366465, "CI": 0.018518733906220806, "Accuracy": 0.9493827160493827}, {"Combination": "DecisionTree + DTA", "Defect Level": 0.5, "Mean Distance": 0.5201795606217501, "CI": 0.021090356305460873, "Accuracy": 0.9575555555555556}, {"Combination": "DecisionTree + DTA", "Defect Level": 0.7, "Mean Distance": 0.5363486828264248, "CI": 0.02024412171746182, "Accuracy": 0.9541062801932367}, {"Combination": "DecisionTree + DTA", "Defect Level": 0.9, "Mean Distance": 0.5576024174506922, "CI": 0.024641808973517865, "Accuracy": 0.9612037037037037}, {"Combination": "DecisionTree + HSJ", "Defect Level": 0.1, "Mean Distance": 0.6219958115918164, "CI": 0.018306170152553647, "Accuracy": 0.9487684729064041}, {"Combination": "DecisionTree + HSJ", "Defect Level": 0.3, "Mean Distance": 0.6456038112727045, "CI": 0.02351762274565488, "Accuracy": 0.94880174291939}, {"Combination": "DecisionTree + HSJ", "Defect Level": 0.5, "Mean Distance": 0.6796003868369369, "CI": 0.025805565208910253, "Accuracy": 0.9585454545454545}, {"Combination": "DecisionTree + HSJ", "Defect Level": 0.7, "Mean Distance": 0.734713588441102, "CI": 0.03601156589913437, "Accuracy": 0.954219948849105}, {"Combination": "DecisionTree + HSJ", "Defect Level": 0.9, "Mean Distance": 0.6497987081914257, "CI": 0.030510797117125926, "Accuracy": 0.9629017857142856}, {"Combination": "SVM (RBF) + HSJ", "Defect Level": 0.1, "Mean Distance": 0.5248056162977282, "CI": 0.017402429163621693, "Accuracy": 0.9649425287356321}, {"Combination": "SVM (RBF) + HSJ", "Defect Level": 0.3, "Mean Distance": 0.5555674911366205, "CI": 0.024815358071196645, "Accuracy": 0.9699588477366254}, {"Combination": "SVM (RBF) + HSJ", "Defect Level": 0.5, "Mean Distance": 0.5840340005792409, "CI": 0.025356139665017523, "Accuracy": 0.9728888888888889}, {"Combination": "SVM (RBF) + HSJ", "Defect Level": 0.7, "Mean Distance": 0.5824468898542692, "CI": 0.018020992518557353, "Accuracy": 0.9405797101449276}, {"Combination": "SVM (RBF) + HSJ", "Defect Level": 0.9, "Mean Distance": 0.5868035250412875, "CI": 0.03462507994203975, "Accuracy": 0.9644444444444444}]}};
+      var embedOpt = {"mode": "vega-lite"};
+
+      function showError(el, error){
+          el.innerHTML = ('<div style="color:red;">'
+                          + '<p>JavaScript Error: ' + error.message + '</p>'
+                          + "<p>This usually means there's a typo in your chart specification. "
+                          + "See the javascript console for the full traceback.</p>"
+                          + '</div>');
+          throw error;
+      }
+      const el = document.getElementById('vis');
+      vegaEmbed("#vis", spec, embedOpt)
+        .catch(error => showError(el, error));
+    })(vegaEmbed);
+
+  </script>
+</body>
+</html>

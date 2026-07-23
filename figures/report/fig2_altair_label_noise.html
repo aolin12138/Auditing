@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    #vis.vega-embed {
+      width: 100%;
+      display: flex;
+    }
+
+    #vis.vega-embed details,
+    #vis.vega-embed details summary {
+      position: relative;
+    }
+  </style>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega@6"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-lite@6.4.1"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-embed@7"></script>
+</head>
+<body>
+  <div id="vis"></div>
+  <script>
+    (function(vegaEmbed) {
+      var spec = {"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}}, "data": {"name": "data-860f5903fe1670c1d5bc5639bf108194"}, "facet": {"field": "Combination", "title": null, "type": "nominal"}, "spec": {"layer": [{"mark": {"type": "line", "point": true, "strokeWidth": 2}, "encoding": {"color": {"field": "Combination", "type": "nominal"}, "x": {"field": "Noise Level", "scale": {"domain": [0.05, 0.55]}, "title": "Label Noise Level", "type": "quantitative"}, "y": {"field": "Mean Distance", "title": "Mean Pairwise Distance", "type": "quantitative"}}}, {"mark": {"type": "line", "opacity": 0.5, "point": true, "strokeDash": [4, 4], "strokeWidth": 1.5}, "encoding": {"color": {"field": "Combination", "type": "nominal"}, "x": {"field": "Noise Level", "type": "quantitative"}, "y": {"field": "Accuracy", "scale": {"domain": [0.5, 1.05]}, "title": "Test Accuracy", "type": "quantitative"}}}]}, "columns": 2, "resolve": {"scale": {"y": "independent"}}, "title": {"text": "Label Noise: Spread Rises Alongside Accuracy Collapse", "fontSize": 14, "subtitle": "Solid lines = mean pairwise distance (clean spread). Dashed = test accuracy. Both move together."}, "$schema": "https://vega.github.io/schema/vega-lite/v6.4.1.json", "datasets": {"data-860f5903fe1670c1d5bc5639bf108194": [{"Combination": "DecisionTree + DTA", "Noise Level": 0.1, "Mean Distance": 0.4551610107342143, "CI": 0.017662967684649405, "Accuracy": 0.9270370370370371}, {"Combination": "DecisionTree + DTA", "Noise Level": 0.2, "Mean Distance": 0.49859619238235076, "CI": 0.01551302566140296, "Accuracy": 0.9061111111111111}, {"Combination": "DecisionTree + DTA", "Noise Level": 0.3, "Mean Distance": 0.5041548627255709, "CI": 0.018175155244266484, "Accuracy": 0.8520370370370371}, {"Combination": "DecisionTree + DTA", "Noise Level": 0.4, "Mean Distance": 0.5444212408586885, "CI": 0.019431272368580204, "Accuracy": 0.7887037037037037}, {"Combination": "DecisionTree + DTA", "Noise Level": 0.5, "Mean Distance": 0.6159210440915073, "CI": 0.03278322372526015, "Accuracy": 0.6407407407407407}, {"Combination": "SVM (RBF) + HSJ", "Noise Level": 0.1, "Mean Distance": 0.5260801445954317, "CI": 0.020746239404789882, "Accuracy": 0.9564814814814816}, {"Combination": "SVM (RBF) + HSJ", "Noise Level": 0.2, "Mean Distance": 0.5105304176158675, "CI": 0.02079514436173496, "Accuracy": 0.9529629629629629}, {"Combination": "SVM (RBF) + HSJ", "Noise Level": 0.3, "Mean Distance": 0.5442745750653082, "CI": 0.026237598195077344, "Accuracy": 0.9364814814814815}, {"Combination": "SVM (RBF) + HSJ", "Noise Level": 0.4, "Mean Distance": 0.6166222780038884, "CI": 0.047440991986104415, "Accuracy": 0.8911111111111111}, {"Combination": "SVM (RBF) + HSJ", "Noise Level": 0.5, "Mean Distance": 0.6628228659787527, "CI": 0.05551841468561047, "Accuracy": 0.7757407407407407}]}};
+      var embedOpt = {"mode": "vega-lite"};
+
+      function showError(el, error){
+          el.innerHTML = ('<div style="color:red;">'
+                          + '<p>JavaScript Error: ' + error.message + '</p>'
+                          + "<p>This usually means there's a typo in your chart specification. "
+                          + "See the javascript console for the full traceback.</p>"
+                          + '</div>');
+          throw error;
+      }
+      const el = document.getElementById('vis');
+      vegaEmbed("#vis", spec, embedOpt)
+        .catch(error => showError(el, error));
+    })(vegaEmbed);
+
+  </script>
+</body>
+</html>
