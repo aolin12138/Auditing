@@ -280,23 +280,23 @@
     </div>
   </section>
 
-  <section data-label="Limitations" data-screen-label="10 Limits" data-speaker-notes="[AOLIN] We want to be honest about scope. What works: coverage-gap bias is detectable when accuracy is blind to it — that's the exciting part. What we're still wrestling with: it's only iris so far, low-dimensional; the coverage gap also shrinks the test set, a confound we're fixing by biasing only the training fold; and for label noise the spread rises too, but accuracy already collapses, so geometry adds nothing there. Coverage gap is the real result." style="height:100%;box-sizing:border-box;display:flex;flex-direction:column;padding:var(--pad-top) var(--pad-x) var(--pad-bottom);background:var(--paper);color:var(--ink);font-family:var(--sans);">
-    <div style="font-family:var(--mono);font-size:var(--type-kicker);letter-spacing:.18em;text-transform:uppercase;color:var(--accent);">Honest scope</div>
-    <h2 style="margin:22px 0 0;font-family:var(--head);font-weight:600;font-size:var(--type-title);line-height:1.06;letter-spacing:-.015em;">What it catches, and what it doesn't</h2>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:56px;margin-top:56px;flex:1;">
+  <section data-label="Conclusion" data-screen-label="10 Conclusion" data-speaker-notes="[AOLIN] Wrap up and forward look. We verified: for coverage gap, our metric successfully revealed the hidden defect while accuracy stayed blind. For label noise, the metric moved too — but accuracy was already collapsing, so it wasn't a hidden defect either, and above 0.5 the metric itself destabilised. What this tells us is that different defects, and different model-attack combinations, can respond very differently to the same metric. We suspect no single metric will work for every case. In the future: test more realistic defects — outliers, feature corruption — try more models like random forest or XGBoost to check they have the same geometric property, and most importantly, build a SET of metrics. Because one metric can fail for some cases — but when you have a set of them, it's a lot harder for all of them to fail at the same time." style="height:100%;box-sizing:border-box;display:flex;flex-direction:column;padding:var(--pad-top) var(--pad-x) var(--pad-bottom);background:var(--paper);color:var(--ink);font-family:var(--sans);">
+    <div style="font-family:var(--mono);font-size:var(--type-kicker);letter-spacing:.18em;text-transform:uppercase;color:var(--accent);">Conclusion &amp; future work</div>
+    <h2 style="margin:22px 0 0;font-family:var(--head);font-weight:600;font-size:var(--type-title);line-height:1.06;letter-spacing:-.015em;">One metric cannot catch every defect</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:56px;margin-top:52px;flex:1;">
       <div style="display:flex;flex-direction:column;gap:24px;">
-        <div style="font-family:var(--head);font-weight:600;font-size:34px;color:var(--accent);">What works</div>
+        <div style="font-family:var(--head);font-weight:600;font-size:34px;color:var(--accent);">What we found</div>
         <div style="display:flex;flex-direction:column;gap:20px;">
-          <p style="margin:0;font-size:30px;line-height:1.38;"><strong>Coverage-gap bias is detectable</strong> — the spread signal rises while accuracy stays flat.</p>
-          <p style="margin:0;font-size:30px;line-height:1.38;color:var(--muted);">The signal appears on the SVM under a purely black-box attack — no model internals needed.</p>
+          <p style="margin:0;font-size:30px;line-height:1.38;"><strong>Coverage gap:</strong> the metric works — spread rises while accuracy stays flat. The defect is hidden, the geometry reveals it.</p>
+          <p style="margin:0;font-size:30px;line-height:1.38;color:var(--muted);"><strong>Label noise:</strong> the geometry moves — but accuracy collapses in lockstep. The defect was never hidden; the metric adds nothing. And past 0.5 the metric itself destabilises.</p>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:24px;border-left:1px solid var(--hair);padding-left:56px;">
-        <div style="font-family:var(--head);font-weight:600;font-size:34px;color:var(--ink);">What we're still testing</div>
+        <div style="font-family:var(--head);font-weight:600;font-size:34px;color:var(--ink);">Where we go next</div>
         <div style="display:flex;flex-direction:column;gap:20px;">
-          <p style="margin:0;font-size:30px;line-height:1.38;color:var(--muted);"><strong style="color:var(--ink);">Only iris</strong> so far — small, low-dimensional; density clustering may not survive higher dimensions.</p>
-          <p style="margin:0;font-size:30px;line-height:1.38;color:var(--muted);"><strong style="color:var(--ink);">A confound:</strong> the coverage gap also shrinks the test set ― the compression ratio shows the signal survives, but biasing only the training fold would fully isolate it.</p>
-          <p style="margin:0;font-size:30px;line-height:1.38;color:var(--muted);"><strong style="color:var(--ink);">Label noise</strong> moves the geometry too — but accuracy already collapses, so geometry adds nothing there.</p>
+          <p style="margin:0;font-size:30px;line-height:1.38;color:var(--muted);"><strong style="color:var(--ink);">More defects</strong> — realistic ones: outliers, feature corruption, systematic under-sampling.</p>
+          <p style="margin:0;font-size:30px;line-height:1.38;color:var(--muted);"><strong style="color:var(--ink);">More models</strong> — random forest, XGBoost — to check the property generalises.</p>
+          <p style="margin:0;font-size:30px;line-height:1.38;color:var(--muted);"><strong style="color:var(--ink);">A set of metrics</strong> — not one. Each may fail for some cases, but it's hard for all of them to fail at once.</p>
         </div>
       </div>
     </div>

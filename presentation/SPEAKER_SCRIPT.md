@@ -59,30 +59,36 @@ So together this confirms: the coverage-gap signal is a **real attack effect**, 
 
 ---
 
-## Slide 10 — Limitations (~40 s)
+## Slide 10 — Conclusion & Future Work (~40 s)
 
-"So to wrap up: we verified that for coverage gap, our metric successfully revealed a hidden defect — accuracy was blind, the geometry caught it. For label noise, the metric moved too — but accuracy was already collapsing, so we didn't need the metric. And past a certain point the metric itself destabilises.
+"So to wrap up.
 
-What this suggests is that different defects — and different model-attack combinations — can respond very differently to the same metric. We suspect no **single** metric will work for every case.
+We verified: for coverage gap, our metric successfully revealed a hidden defect — accuracy was blind, the geometry caught it.
 
-In the future: we want to test defects that actually show up in real datasets — outliers, feature corruption, systematic under-sampling. Try more models — random forest, XGBoost — to see whether they have the same geometric property. And most importantly: move from a single metric to a **set** of metrics. Because one metric might fail for some defects and work for others — but it's a lot harder for all of them to fail at the same time."
+For label noise, the metric moved too — but accuracy was already collapsing. The defect wasn't hidden either. And above noise 0.5 the metric itself destabilises completely.
+
+What this tells us: different defects, and different model-attack combinations, can respond very differently to the same metric. We suspect no **single** metric will work for every case.
+
+So in the future: more realistic defects — outliers, feature corruption, things that actually happen in real datasets. More models — random forest, XGBoost — to check the geometric property generalises. And most importantly: a **set of metrics**, not just one. Because one metric can fail for some cases — but it's a lot harder for all of them to fail at the same time."
+
+*[Handoff to partner for Slide 11 — Takeaway]*
 
 ---
 
 ## Cheat sheet: Numbers on one card
 
-| When you say… | The number is… |
-|---------------|----------------|
-| Tree + DTA (coverage gap) | d = +2.06 |
-| SVM + HSJ (coverage gap) | d = +0.75 |
-| Tree + HSJ (coverage gap) | d = +0.38 |
-| Accuracy under coverage gap | flat ~0.96 |
-| Tree accuracy 0.1→0.5 noise | 0.93 → 0.64 |
-| SVM accuracy 0.1→0.5 noise | 0.96 → 0.78 |
-| Compression ratio, coverage gap | ~0.70 |
-| Compression ratio, label noise | → 0.98 |
-| Perturbation, coverage gap | rises, 1.38 → 1.70 |
-| Perturbation, label noise | drops, 0.81 → 0.64 |
-| Bias 0.9: surviving points | 4 of 50 |
-| Var explodes above noise 0.5 | std ~10×, valid runs 36→12 |
-| Grid scale | 360 runs/grid, 5-fold CV |
+| When you say…                  | The number is…              |
+| ------------------------------- | ---------------------------- |
+| Tree + DTA (coverage gap)       | d = +2.06                    |
+| SVM + HSJ (coverage gap)        | d = +0.75                    |
+| Tree + HSJ (coverage gap)       | d = +0.38                    |
+| Accuracy under coverage gap     | flat ~0.96                   |
+| Tree accuracy 0.1→0.5 noise    | 0.93 → 0.64                 |
+| SVM accuracy 0.1→0.5 noise     | 0.96 → 0.78                 |
+| Compression ratio, coverage gap | ~0.70                        |
+| Compression ratio, label noise  | → 0.98                      |
+| Perturbation, coverage gap      | rises, 1.38 → 1.70          |
+| Perturbation, label noise       | drops, 0.81 → 0.64          |
+| Bias 0.9: surviving points      | 4 of 50                      |
+| Var explodes above noise 0.5    | std ~10×, valid runs 36→12 |
+| Grid scale                      | 360 runs/grid, 5-fold CV     |
