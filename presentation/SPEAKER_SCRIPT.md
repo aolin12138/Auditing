@@ -1,4 +1,4 @@
-# Speaker Script — Aolin (Slides 07–10)
+Speaker Script — Aolin (Slides 07–10)
 
 > Your section. Partner covers opening through Pipeline + Metric.
 > Read naturally. Bold = numbers to say clearly. ~4 minutes total.
@@ -77,18 +77,18 @@ So in the future: more realistic defects — outliers, feature corruption, thing
 
 ## Cheat sheet: Numbers on one card
 
-| When you say…                  | The number is…              |
-| ------------------------------- | ---------------------------- |
-| Tree + DTA (coverage gap)       | d = +2.06                    |
-| SVM + HSJ (coverage gap)        | d = +0.75                    |
-| Tree + HSJ (coverage gap)       | d = +0.38                    |
-| Accuracy under coverage gap     | flat ~0.96                   |
-| Tree accuracy 0.1→0.5 noise    | 0.93 → 0.64                 |
-| SVM accuracy 0.1→0.5 noise     | 0.96 → 0.78                 |
-| Compression ratio, coverage gap | ~0.70                        |
-| Compression ratio, label noise  | → 0.98                      |
-| Perturbation, coverage gap      | rises, 1.38 → 1.70          |
-| Perturbation, label noise       | drops, 0.81 → 0.64          |
-| Bias 0.9: surviving points      | 4 of 50                      |
+| When you say…                   | The number is…             |
+| ------------------------------- | -------------------------- |
+| Tree + DTA (coverage gap)       | d = +2.06                  |
+| SVM + HSJ (coverage gap)        | d = +0.75                  |
+| Tree + HSJ (coverage gap)       | d = +0.38                  |
+| Accuracy under coverage gap     | flat ~0.96                 |
+| Tree accuracy 0.1→0.5 noise     | 0.93 → 0.64                |
+| SVM accuracy 0.1→0.5 noise      | 0.96 → 0.78                |
+| Compression ratio, coverage gap | ~0.70                      |
+| Compression ratio, label noise  | → 0.98                     |
+| Perturbation, coverage gap      | rises, 1.38 → 1.70         |
+| Perturbation, label noise       | drops, 0.81 → 0.64         |
+| Bias 0.9: surviving points      | 4 of 50                    |
 | Var explodes above noise 0.5    | std ~10×, valid runs 36→12 |
-| Grid scale                      | 360 runs/grid, 5-fold CV     |
+| Grid scale                      | 360 runs/grid, 5-fold CV   |
