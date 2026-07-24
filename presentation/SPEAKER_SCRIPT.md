@@ -1,94 +1,100 @@
-Speaker Script — Aolin (Slides 07–10)
+# Speaker Script — Aolin (Slides 07–10)
 
-> Your section. Partner covers opening through Pipeline + Metric.
-> Read naturally. Bold = numbers to say clearly. ~4 minutes total.
-
----
-
-## Slide 07 — Finding: Coverage Gap (~90 s)
-
-"So in the experiment there are three things we varied to test the relationship between spread and the defect.
-
-One: the model — we trained on a decision tree and an RBF-SVM. Two: the attack — one white-box, DecisionTreeAttack, which reads the tree structure directly; and one black-box, HopSkipJump, which only sees the predicted label. Three: the defect type — different defects give different signals, which is the whole point.
-
-This plot shows all the combinations under the **coverage gap** defect. The x-axis is how much of one class we delete — going from 0.1 to 0.9, from 45 surviving points all the way down to just 4. The y-axis is spread — how far apart the adversarial points are from each other.
-
-You can see the green line, Tree plus the white-box attack — strongest signal. Cohen's d of plus 2.06. The red line, SVM under the black-box attack — d of plus 0.75, still a clear effect. The blue line is the weakest — Tree under HopSkipJump, d of plus 0.38. There's a reason for that: the tree's boundary is a set of flat, axis-aligned facets. HopSkipJump works by sampling random perturbations to estimate the boundary direction — on a flat surface most samples stay inside the same leaf without crossing the boundary, so the estimate is noisy and the attack often fails to converge. We had to terminate 12 of those runs.
-
-Now you might notice the blue line dips from bias 0.7 to 0.9 — the spread drops. That's because when the bias is 0.9, only 4 points of that class survive. You barely have any test points left in that class to attack. So the attack falls back onto the healthy classes — the ones that weren't touched — and their boundary is in a dense, normal region, so the adversarial points cluster closer together again. And here's the interesting part: the **white-box** attack, the green line, does NOT drop. It keeps rising. That's because DecisionTreeAttack is deterministic — even with almost no points, it still finds that far, stretched boundary in the empty gap, and crosses it, producing spread-out points. HopSkipJump, being non-deterministic, can't reliably reach that far boundary — it defaults to the easier, nearby boundary on the healthy side. So the dip is actually an attack-mechanism effect, not a model flaw.
-
-But the punchline — look at the bottom panel. Test accuracy is basically flat, around 96 percent, for all three combinations. The model looks completely healthy. No standard check would flag anything wrong. But the geometry is shifting — the adversarial points know there's a hole in the data."
+> Your section (partner does 01–06). ~5 minutes. Bold = say clearly.
 
 ---
 
-## Slide 08 — Label Noise (~80 s)
+## Slide 07 — Coverage Gap (~75 s)
 
-"Now, contrast this with a different defect — label noise. Instead of deleting a region, we randomly flip a fraction of the training labels to a different class. This is like having annotation errors in your dataset.
+"We varied three things: the model — decision tree or SVM. The attack — white-box
+DecisionTreeAttack, or black-box HopSkipJump that only sees predicted labels.
+And the defect type.
 
-This is the full-range plot from 0.1 to 0.9, across all three combinations. We extended the experiment past 0.5 for this.
+This is the coverage gap — deleting up to 90 percent of one class. Green: Tree
+with white-box attack, strongest, Cohen's d of **+2.06**. Red: SVM under
+black-box — **d = +0.75**, still clear. Blue: Tree under HopSkipJump, weakest —
+**d = +0.38**. The tree's flat boundary makes HopSkipJump's direction estimate noisy.
 
-Now, you can see spread **does** go up here too. The effect sizes from 0.1 to 0.5 are comparable — roughly plus 1.1 to plus 2.0 across the three. So the geometry moves.
+Notice the blue line dips at 0.9 — almost the entire class is gone, only 4
+points survive. The attack can only happen in the healthy region, so points
+cluster together again.
 
-But there are three reasons this is **not** a useful signal.
-
-**First:** look at accuracy on the bottom. It falls in lockstep with the spread. Tree accuracy drops from 93 percent to 64 percent by noise 0.5. The SVM from 96 to 78. So unlike the coverage gap, this defect is **not hidden** — accuracy already tells you something is wrong. The geometry adds no information that accuracy didn't already give you.
-
-**Second:** the shaded region past 0.5. Here the variance — these error bars — blows up by about ten times. And the number of valid runs collapses — at noise 0.9, only 12 out of 36 runs even produce a usable cluster. The model itself is below the chance line — accuracy falls below one-third, which is the dotted line. At this point it's just a broken model thrashing. The metric isn't giving you a signal about the defect anymore — it's just measuring randomness from a dead model.
-
-What's actually happening mechanically: with more noise, the tree creates more leaves to memorize the corrupted labels. Every test point is now surrounded by boundaries — so to flip the label, it barely has to move. Like, the adversarial point is **trapped** between the boundaries. HopSkipJump initializes from a random point and tries to inch toward the test point while staying misclassified — but any small step flips the class label again. So it can't move. Where it lands is basically set by the random initialization, and different runs give you different answers — which is why the variance explodes.
-
-**Third:** and this is important for the bigger picture — even in the working regime before 0.5, the **direction** of the geometric change depends on class separability. On well-separated data like iris, spread goes up. On datasets where classes already overlap, the direction reverses. So even when the metric works, you can't trust which way it will go without knowing the data structure in advance.
-
-So label noise is a negative result — but it tells us something: the coverage-gap signal is **specific**. It's not 'any defect makes the geometry shift'. It's specific to a structural hole in the data. That sharpens the whole thesis."
+But the headline: accuracy is **flat at 96 percent**. Model looks healthy.
+The geometry gives the bias away."
 
 ---
 
-## Slide 09 — Verification (~50 s)
+## Slide 08 — Label Noise (~75 s)
 
-"One concern you might have: the coverage gap changes the test set too — deleting 90 percent of a class means fewer points to attack. Is the spread signal just tracking that, instead of a real attack effect?
+"Now the contrast — label noise: we randomly flip training labels. Full range
+to 0.9, all three combinations.
 
-We tested this with a **compression ratio** — the adversarial spread divided by the original test-point spread. If the attack does nothing, this ratio should be around 1.0 — meaning the adversarial cloud just looks like the test data.
+Spread **does** rise — effect sizes similar, around +1.1 to +2.0. But look at
+accuracy: it falls in **lockstep**. Tree from 93 to 64 percent. SVM from 96 to
+78. This defect is **not hidden** — accuracy already flags it. The geometry adds nothing.
 
-Red is label noise: the ratio goes to **0.98**. The points barely moved — the adversarial distribution is essentially the same as the test-point distribution. No genuine attack signal.
+The shaded region past 0.5: the model is below chance. Error bars blow up ten
+times. Only 12 of 36 runs produce a usable cluster at noise 0.9. Just noise
+from a dead model.
 
-Green is the coverage gap: the ratio stays at around **0.70** — the adversarial cloud is consistently about 30 percent tighter than the test cloud. It's genuinely compressed by the attack.
+Even before 0.5, the **direction** depends on class separability — on overlapping
+datasets the effect reverses. So when the metric moves, you can't trust which way.
 
-And on the right, the perturbation — how far each point travels from its original test point. For coverage gap, perturbation **increases** — points have to travel farther to cross a boundary that's been pushed into the empty region. For label noise, perturbation **decreases** — more noise means more boundaries, so the nearest boundary is closer to every point, and you barely have to move.
-
-So together this confirms: the coverage-gap signal is a **real attack effect**, not just a mirror of the changing test set."
+Bottom line: coverage gap was a hidden defect. Label noise was never hidden.
+The metric is specific, and that's a good thing."
 
 ---
 
-## Slide 10 — Conclusion & Future Work (~40 s)
+## Slide 09 — Verification (~45 s)
 
-"So to wrap up.
+"One concern: the coverage gap changes the test set too. Is spread just tracking that?
 
-We verified: for coverage gap, our metric successfully revealed a hidden defect — accuracy was blind, the geometry caught it.
+We checked with the **compression ratio** — adv spread divided by test spread.
+Ratio = 1 means the attack did nothing.
 
-For label noise, the metric moved too — but accuracy was already collapsing. The defect wasn't hidden either. And above noise 0.5 the metric itself destabilises completely.
+Red, label noise: ratio → **0.98** — points barely moved. No signal.
 
-What this tells us: different defects, and different model-attack combinations, can respond very differently to the same metric. We suspect no **single** metric will work for every case.
+Green, coverage gap: ratio stays at **~0.70** — the cloud is 30 percent tighter.
+And perturbation **increases** with bias — points travel farther. Label noise
+goes the opposite way.
 
-So in the future: more realistic defects — outliers, feature corruption, things that actually happen in real datasets. More models — random forest, XGBoost — to check the geometric property generalises. And most importantly: a **set of metrics**, not just one. Because one metric can fail for some cases — but it's a lot harder for all of them to fail at the same time."
+The coverage-gap signal is a **real attack effect**, not an artifact."
+
+---
+
+## Slide 10 — Conclusion (~35 s)
+
+"To wrap up.
+
+Coverage gap: our metric caught a hidden defect while accuracy was blind.
+
+Label noise: the geometry moved, but accuracy was already collapsing — never
+hidden. Past 0.5 the metric destabilises.
+
+What this tells us: different defects respond differently. No single metric
+works for everything.
+
+Next: more realistic defects — outliers, feature corruption. More models —
+random forest, XGBoost. And most importantly, a **set of metrics**. One can
+fail — it's much harder for all of them to fail at once."
 
 *[Handoff to partner for Slide 11 — Takeaway]*
 
 ---
 
-## Cheat sheet: Numbers on one card
+## Cheat sheet
 
-| When you say…                   | The number is…             |
-| ------------------------------- | -------------------------- |
-| Tree + DTA (coverage gap)       | d = +2.06                  |
-| SVM + HSJ (coverage gap)        | d = +0.75                  |
-| Tree + HSJ (coverage gap)       | d = +0.38                  |
-| Accuracy under coverage gap     | flat ~0.96                 |
-| Tree accuracy 0.1→0.5 noise     | 0.93 → 0.64                |
-| SVM accuracy 0.1→0.5 noise      | 0.96 → 0.78                |
-| Compression ratio, coverage gap | ~0.70                      |
-| Compression ratio, label noise  | → 0.98                     |
-| Perturbation, coverage gap      | rises, 1.38 → 1.70         |
-| Perturbation, label noise       | drops, 0.81 → 0.64         |
-| Bias 0.9: surviving points      | 4 of 50                    |
-| Var explodes above noise 0.5    | std ~10×, valid runs 36→12 |
-| Grid scale                      | 360 runs/grid, 5-fold CV   |
+| When you say… | Number |
+|---------------|--------|
+| Tree + DTA | d = +2.06 |
+| SVM + HSJ | d = +0.75 |
+| Tree + HSJ | d = +0.38 |
+| Accuracy (coverage gap) | flat ~0.96 |
+| Tree accuracy 0.1→0.5 noise | 0.93 → 0.64 |
+| SVM accuracy 0.1→0.5 noise | 0.96 → 0.78 |
+| Compression ratio, coverage gap | ~0.70 |
+| Compression ratio, label noise | → 0.98 |
+| Perturbation, coverage gap | rises |
+| Perturbation, label noise | drops |
+| Bias 0.9 surviving points | 4 of 50 |
+| Variance above noise 0.5 | ~10× |
