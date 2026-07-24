@@ -52,23 +52,36 @@ ax_acc.axhline(0.96, color='gray', ls=':', lw=1, alpha=0.4)
 fig.tight_layout(); fig.savefig(f'{OUT}/p1_coverage_gap.png'); plt.close()
 
 # ═══════════════════════════════════════════════════════════
-# PLOT 2: Label noise — both spread AND accuracy move
+# PLOT 2: Label noise — full 0.1-0.9 range, all 3 combos.
+# Spread rises WITH accuracy (confounded, not hidden); above 0.5
+# the model is near-random and the metric variance explodes.
 # ═══════════════════════════════════════════════════════════
 print("Plot 2...")
-fig, (ax_l, ax_r) = plt.subplots(1, 2, figsize=(9, 4))
+fig, (ax, ax_acc) = plt.subplots(2, 1, figsize=(7, 5), gridspec_kw={'height_ratios': [3, 1]})
 
-for ax, combo, src, col, color in [
-    (ax_l, 'Tree + DTA', dt.filter((pl.col('defect')=='label_noise') & ~pl.col('mean_dist').is_nan()), 'level', '#2ca02c'),
-    (ax_r, 'SVM + HSJ', ln.filter((pl.col('model')=='svm') & ~pl.col('mean_dist').is_nan()), 'noise', '#d62728'),
+for combo, src, col, color in [
+    ('Tree + DTA', dt.filter((pl.col('defect')=='label_noise')), 'level', '#2ca02c'),
+    ('SVM + HSJ', ln.filter(pl.col('model')=='svm'), 'noise', '#d62728'),
+    ('Tree + HSJ', ln.filter(pl.col('model')=='tree'), 'noise', '#1f77b4'),
 ]:
-    agg = src.group_by(col).agg(pl.col('mean_dist').mean(), pl.col('vacc').mean()).sort(col)
-    x = agg[col].to_numpy()
-    ax.plot(x, agg['mean_dist'].to_numpy(), 'o-', lw=2, ms=5, color=color)
-    ax.plot(x, agg['vacc'].to_numpy(), 's--', lw=1.5, ms=4, color='gray', alpha=0.6)
-    ax.set_xlabel('Label noise'); ax.set_title(combo)
-ax_l.set_ylabel('Mean distance  /  Accuracy'); ax_l.legend(['Clean spread', 'Test accuracy'], frameon=False, fontsize=8)
-fig.suptitle('Label noise: spread and accuracy move together — not a hidden defect'); fig.tight_layout()
-fig.savefig(f'{OUT}/p2_label_noise.png'); plt.close()
+    sp = src.filter(~pl.col('mean_dist').is_nan())
+    agg = sp.group_by(col).agg(pl.col('mean_dist').mean().alias('m'),
+                               pl.col('mean_dist').std().alias('s'),
+                               pl.len().alias('n')).sort(col)
+    x = agg[col].to_numpy(); m = agg['m'].to_numpy(); se = agg['s'].to_numpy() / np.sqrt(agg['n'].to_numpy())
+    ax.errorbar(x, m, yerr=1.96*se, fmt='o-', lw=2, ms=5, capsize=3, color=color, label=combo)
+    acc = src.filter(~pl.col('vacc').is_nan()).group_by(col).agg(pl.col('vacc').mean().alias('a')).sort(col)
+    ax_acc.plot(acc[col].to_numpy(), acc['a'].to_numpy(), 'o-', lw=1.5, ms=4, color=color, alpha=0.7)
+
+# Mark the >0.5 "randomness regime" where the model is near-chance and the metric destabilises
+for a in (ax, ax_acc):
+    a.axvspan(0.5, 0.9, color='0.85', alpha=0.35, lw=0)
+ax.text(0.7, ax.get_ylim()[1]*0.93, 'model near-random:\nmetric unusable', ha='center', va='top', fontsize=8, color='0.35')
+ax.set_ylabel('Mean pairwise distance'); ax.legend(loc='upper left', frameon=False)
+ax.set_title('Label noise: spread rises but tracks accuracy, then destabilises past 0.5')
+ax_acc.set_ylabel('Accuracy'); ax_acc.set_xlabel('Label noise fraction'); ax_acc.set_ylim(0, 1.05)
+ax_acc.axhline(1/3, color='gray', ls=':', lw=1, alpha=0.5)  # chance level for 3 classes
+fig.tight_layout(); fig.savefig(f'{OUT}/p2_label_noise.png'); plt.close()
 
 # ═══════════════════════════════════════════════════════════
 # PLOT 3: Metric decomposition — same story, cleaner signal

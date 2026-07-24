@@ -30,33 +30,49 @@ Figure: `figures/report/p1_coverage_gap.png` (z-scored per combination).
    direction by sampling perturbations; a tree's boundary is flat axis-aligned
    facets, so most perturbations stay inside a leaf without crossing — noisy
    estimate, frequent non-convergence.
-2. **Non-monotonic drop at bias 0.9.** Real, explainable: at bias 0.9 only 4/50
-   target-class points survive. A depth-3 tree's class-0 decision *region*
-   collapses (catchment drops from 9 test points to <1), so the attack targets
-   shift to the **intact class-1-vs-2 boundary** in healthy, dense space →
-   spread reverts down. The measurement stops probing the gap. SVM avoids this
-   (RBF support vectors keep a real class-0 boundary alive). See
+2. **Non-monotonic drop at bias 0.9 — it's an ATTACK effect (HSJ vs DTA), not
+   purely a model effect.** Driven entirely by tc=0 (setosa depleted): spread
+   0.806 → 0.627. At bias 0.9 only 4/50 setosa points survive, so <1 lands in
+   the test fold — the attack has almost nothing to target there and reverts to
+   the **intact class-1-vs-2 boundary** in dense space → spread drops. Why only
+   HSJ shows it: **DecisionTreeAttack is deterministic** and always captures the
+   far, stretched gap boundary, so **Tree+DTA keeps rising** (0.574 → 0.610).
+   **HSJ must *reach* that far boundary by random-init + sampling**; when the
+   depleted class runs out of test points it can't, so its points revert to the
+   healthy boundary (and it fails more — 4 NaN at 0.9, zero for SVM). Note SVM+HSJ
+   *also* drops for tc=0 (0.616 → 0.533) — it's just **masked in the aggregate by
+   class averaging** over tc=1/tc=2, whereas Tree+HSJ's swing is large enough to
+   survive averaging. So "SVM avoids it" is an aggregation artifact. See
    [06-lessons-gotchas.md](06-lessons-gotchas.md).
 
 ---
 
 ## Finding 2 — Label noise: no independent signal
 
-Spread also moves under label noise, but it is **not a useful diagnostic**:
+Spread **rises** under label noise (it is NOT flat), but it is still **not a
+useful diagnostic** for two reasons. Measured across the full 0.1–0.9 range for
+all three combos (grids extended past 0.5 for this):
 
-- **Accuracy-confounded.** Tree+HSJ: spread d=−0.80 but accuracy collapses
-  0.93→0.64. SVM+HSJ: null (d=−0.09), accuracy 0.96→0.78. When the geometry
-  moves, accuracy has already flagged the problem.
-- **Direction depends on class separability.** Density *decreased* on iris/wine
-  (well-separated), *increased* on Car Evaluation (categorical/overlapping).
-  Confirmed on synthetic 3D: well-separated → down, overlapping → slight up,
-  categorical → strong up.
+- **The rise is real but accuracy-CONFOUNDED.** Spread 0.1→0.5 rises with large
+  effect: Tree+DTA d=+2.02, Tree+HSJ d=+1.57, SVM+HSJ d=+1.08. But test accuracy
+  falls in lockstep (tree 0.93→0.64, SVM 0.96→0.78). The defect is already
+  plainly visible in accuracy, so the geometry adds nothing. (Note: in *density*
+  terms this reads as a *decrease* — density ≈ 1/spread; earlier notes quoting
+  d=−0.80 / −0.09 were the size-sensitive density, not spread.)
+- **Direction depends on class separability.** Spread *increases* on iris/wine
+  (well-separated), little change / opposite on Car Evaluation (categorical).
+  Confirmed on synthetic 3D.
+- **Above noise 0.5: the metric destabilises entirely.** The model tends toward a
+  random classifier (accuracy below the 1/3 chance level by 0.8); spread variance
+  grows ~an order of magnitude (std 0.05 → 0.6–0.9) and the number of valid runs
+  collapses (Tree+DTA n: 36 → 12 at 0.9; HSJ hangs more). No stable trend exists
+  — both which points stay correct and where the stochastic HSJ lands are noise.
 - **Mechanism:** well-separated data + noise → tree grows many leaves to
-  memorise noise → points scatter across fragmented boundaries. Overlapping
-  data → tree near ceiling → few new boundaries → points stay clustered.
-- **Above noise 0.5:** variance explodes (std 3× the mean) — signal unusable.
+  memorise noise → every point sits next to a boundary → tiny perturbation → adv
+  cloud ≈ original test cloud (compression ratio → 0.98). Past 0.5 this saturates.
 
-Figure: `figures/report/p2_label_noise.png`.
+Figure: `figures/report/p2_label_noise.png` (full range, 3 combos, shaded >0.5
+randomness regime).
 
 ---
 

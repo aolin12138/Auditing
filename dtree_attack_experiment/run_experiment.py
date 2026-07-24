@@ -35,7 +35,7 @@ OUT = HERE / 'results.parquet'
 PROGRESS = HERE / 'progress.txt'
 
 BIAS_LEVELS = [0.1, 0.3, 0.5, 0.7, 0.9]
-NOISE_LEVELS = [0.1, 0.2, 0.3, 0.4, 0.5]
+NOISE_LEVELS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]  # extended >0.5 to show the randomness regime
 SEEDS = [42, 58, 125]
 CLASSES = [0, 1, 2]
 FEATURES = [0, 1, 2, 3]

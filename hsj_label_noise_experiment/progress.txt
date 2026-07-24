@@ -1,2 +1,2 @@
-DONE: 360 rows in 0.0 min  (27 skipped as hung)
-total_rows=360/360
+DONE: 648 rows in 16.5 min  (89 skipped as hung)
+total_rows=648/648

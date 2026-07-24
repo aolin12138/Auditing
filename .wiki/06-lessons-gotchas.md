@@ -36,16 +36,56 @@ crossing the boundary, so the direction estimate is **noisy** and the attack
 **frequently fails to converge** (many runs terminated). It's a sampling/
 geometry problem, not an absence of gradient.
 
-## Tree+HSJ non-monotonic drop at bias 0.9 is real, not noise
+## Tree+HSJ non-monotonic drop at bias 0.9 — it's an ATTACK effect, not a model effect
 
-Spread rises 0.1→0.7 then *drops* at 0.9. Cause: at bias 0.9 only 4/50
-target-class points survive. A depth-3 tree's class-0 decision *region*
-collapses — its catchment falls from 9 test points to <1. So adversarial points
-shift from probing the extrapolated gap boundary (high spread) to the intact
-class-1-vs-2 boundary in dense space (low spread). The measurement stops
-measuring the gap. **The leaf still exists (~1 leaf predicts class 0) — it's the
-region volume that collapses, not the boundary.** SVM avoids this because RBF
-support vectors keep a real class-0 boundary with only 4 points.
+Initial (incomplete) story: "the depth-3 tree's class-0 region collapses, so
+SVM avoids it." **That's wrong as stated** — region collapse hits all three
+combos equally (same coverage gap, same shrunk test set), so it can't be the
+whole reason. The data (broken down by target class):
+
+| tc=0 spread | bias 0.7 | bias 0.9 |
+|-------------|----------|----------|
+| Tree+HSJ | 0.806 | 0.627 ↓ |
+| SVM+HSJ | 0.616 | 0.533 ↓ |
+| Tree+DTA | 0.574 | 0.610 ↑ |
+
+- The drop is driven entirely by **tc=0 (setosa depleted)** and appears in **both
+  HSJ variants** — SVM+HSJ *also* drops for tc=0, it's just **averaged out** in
+  the aggregate by tc=1/tc=2. Tree+HSJ's swing is big enough to survive averaging.
+- **Tree+DTA does NOT drop** — because DecisionTreeAttack is **deterministic** and
+  always finds the far, stretched gap boundary. HSJ must *reach* that boundary by
+  random-init + Monte-Carlo sampling; when the depleted class runs out of
+  attackable test points, HSJ reverts to the nearer healthy boundary (and fails
+  more — 4 NaN at 0.9, zero for SVM). So the real distinction is **attack**
+  (deterministic DTA vs stochastic HSJ), not model.
+- The leaf still exists (~1 leaf predicts class 0); it's the region *volume* that
+  collapses (catchment 9 test points → <1), not the boundary.
+
+**Lesson:** always break an aggregate signal down by the looped factor (here `tc`)
+before explaining it — "SVM avoids it" was an aggregation artifact.
+
+## HSJ mechanics (verified from ART source, not memory)
+
+`art/attacks/evasion/hop_skip_jump.py`, untargeted: for each correctly-classified
+test point `x`, HSJ (1) draws **uniform random noise** points until one is
+misclassified (`_init_sample`, up to `init_size=100` tries — failure mode #1 if
+none found), (2) **binary-searches inward** from that random point toward `x`,
+stopping just on the misclassified side of the nearest boundary, (3) **walks the
+boundary** (`max_iter=10`) estimating the normal by **sampling ~50–200
+perturbations** (Monte-Carlo — the stochastic/black-box part), stepping toward `x`.
+Result = a misclassified point sitting just across `x`'s nearest boundary, as
+close to `x` as possible. Key consequences:
+
+- **Perturbation = ‖adv − x‖** (measured from the original test point; verified in
+  `_probe_cg.py`) ≈ distance from `x` to its nearest boundary. Small perturbation
+  = a boundary is right next to the test point.
+- **The adv point is ALWAYS across the boundary** (misclassified). Mechanically
+  HSJ moves *inward* from far away, but the right mental model for the numbers is
+  "start at `x`, move out just far enough to cross."
+- **n test points → ≤n adv points** (minus init failures and non-convergence hangs).
+- **Non-deterministic**: random init + sampled direction → different runs give
+  different points. This is why HSJ (black-box) is noisier than DTA and why it
+  destabilises when boundaries are dense (label noise >0.5) or far (extreme gap).
 
 ## Label noise density direction depends on data separability
 

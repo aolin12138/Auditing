@@ -29,7 +29,7 @@ HERE = Path(__file__).resolve().parent
 OUT = HERE / 'results.parquet'
 PROGRESS = HERE / 'progress.txt'
 
-NOISE_LEVELS = [0.1, 0.2, 0.3, 0.4, 0.5]
+NOISE_LEVELS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]  # extended >0.5 to show the randomness regime
 SPLIT_SEEDS  = [42, 58, 125]
 NOISE_SEEDS  = list(range(12))       # 0..11  -> 3 x 12 = 36 realizations per cell
 MODEL_NAMES  = ['tree', 'svm']
