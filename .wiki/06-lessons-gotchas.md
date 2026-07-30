@@ -5,7 +5,7 @@ work.
 
 ## The density formula subtlety (n_pairs vs n_points)
 
-The single most confusing issue in the project.
+The formula mismatch between Aiden's original and the reconstruction:
 
 - **Aiden's actual formula:** `density = n_pairs / (sum_pairwise_dist + 1)`.
   Since `sum = n_pairs × mean_dist`, this is ≈ `1 / mean_dist` — **independent
@@ -22,7 +22,7 @@ formula choice, not a flaw in density. Aiden's real density and spread agree
 (one is 1/the other).
 
 **Lesson:** when reproducing a metric, match the exact formula (pairs vs points,
-sum vs mean). Report **spread** for interpretability, but never claim it beats
+sum vs mean). Report spread for interpretability; spread and Aiden's density are equivalent
 density — they're equivalent.
 
 ## "No gradient to follow" was the wrong explanation for Tree+HSJ
