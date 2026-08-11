@@ -17,6 +17,7 @@ dataset defects from the spatial geometry of adversarial examples.
 | [06-lessons-gotchas.md](06-lessons-gotchas.md) | Pitfalls, corrections, subtle bugs |
 | [07-repo-map.md](07-repo-map.md) | Where everything lives in the repo |
 | [08-open-questions.md](08-open-questions.md) | Limitations and future work |
+| [09-planned-experiments.md](09-planned-experiments.md) | Outlier defect + model-family experiment plans (next up) |
 | [sessions/](sessions/) | Dated session logs |
 
 ## One-paragraph summary

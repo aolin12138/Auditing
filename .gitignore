@@ -28,3 +28,8 @@ P4P_Final_Report* Guidelines and Template.pdf
 # transient experiment logs
 extend.log
 **/extend.log
+*.log
+*.err
+**/progress.txt
+**/run_*.log
+**/run_*.err

@@ -2,6 +2,24 @@
 
 A log of the design decisions made, with rationale. Newest first.
 
+## Outlier grid: overfitting tree + depth as a controlled variable (NOT max_depth=3)
+**Decision:** For the planned outlier experiment, the primary tree **overfits**
+(`max_depth=None`, fits training ~100%), and tree depth is swept as a controlled
+variable {overfit, pruned=3}. **Why:** a depth-3 tree has ≤7 splits and cannot
+grow a tendril to capture a lone far outlier — it would just ignore it, so we'd
+wrongly read "geometry can't detect outliers" when the *model* never reacted. An
+overfit tree memorises the outlier → boundary stretches → that's the signal. The
+overfit-vs-pruned contrast also *proves capacity mediates the signal* (ties to
+Finding 4). Depth-3 elsewhere stays for continuity with Aiden; this is scoped to
+the outlier thread. See `outlier_experiment/PLAN.md`.
+
+## Outlier injection: train-fold only + per-class measurement
+**Decision:** Inject outliers into the training fold only, keep a fixed clean
+test set, and record adversarial spread per class. **Why:** fixes the
+coverage-gap test-set confound from the start, and makes the clean classes an
+in-run baseline for the one-class asymmetry test. See
+[09-planned-experiments.md](09-planned-experiments.md).
+
 ## Report metric framing: "spread, equivalently 1/density" — not "spread is better"
 **Decision:** Present spread as the reported metric because a distance is more
 interpretable, but state explicitly that it equals the inverse of Aiden's

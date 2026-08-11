@@ -26,10 +26,16 @@ headline result.
 ## Medium term
 
 - **More model families:** neural networks with gradient-based attacks (PGD).
-  Does the signal generalise beyond tree/SVM?
+  Does the signal generalise beyond tree/SVM? **→ PLANNED:** RandomForest +
+  XGBoost via HSJ, plus a 2-feature viz setup and stretch MLP+PGD. See
+  [09-planned-experiments.md](09-planned-experiments.md) /
+  `model_family_experiment/PLAN.md`.
 - **More defect types:** feature noise, class imbalance, outliers, systematic
   mislabeling. Map where the signal exists and where it doesn't — a
-  characterisation study.
+  characterisation study. **→ PLANNED (outliers):** correctly-labeled anomalies
+  with controlled distance/count/direction/target-class, train-only injection,
+  per-class asymmetry test. See [09-planned-experiments.md](09-planned-experiments.md)
+  / `outlier_experiment/PLAN.md`.
 - **Tree strategy under coverage gap:** the overfit-vs-pruned flip was only
   tested for label noise. Does pruning change the coverage-gap signal? And
   record spread separately this time (the v2 grid only stored density).

@@ -77,11 +77,11 @@
 **Honest state:** it works for *coverage gaps* on *iris* across two models. It does **not** yet clearly beat accuracy for label noise, and it's untested in high dimensions.
 
 **The decision to bring to the supervisor:**
+
 - **Option A — deepen (recommended):** commit to coverage-gap-as-the-detectable-defect, fix the confound (A), prove it survives dimensionality (B), and find one defect where geometry beats accuracy (C). Narrow but defensible.
 - **Option B — broaden:** more defects / models / datasets, map where the signal exists and where it doesn't — a "characterization study" rather than a single strong claim.
 - **Option C — pivot:** if the supervisor thinks the accuracy-confound makes the whole premise weak, reconsider the framing before investing more.
 
 *My read: Option A. The coverage-gap result is real and the accuracy-flat property is the interesting hook — worth making bulletproof rather than spreading thin.*
 
-
-some next step: feature noise, class imbalance, outlier as defects, xgboost random forestr models etc
+some next step: feature noise, class imbalance, outlier as defects, xgboost random forestr models etc overfit
