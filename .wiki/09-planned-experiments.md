@@ -1,8 +1,7 @@
-# 09 — Planned Experiments (Outliers + Model Families)
+# 09 — Planned Experiments (Outliers + Model Families + Defect Expansion)
 
-Two new experiment threads, both drawn from [08-open-questions.md](08-open-questions.md)
-("more model families", "outliers"). Detailed contracts live in the experiment folders;
-this page is the index and rationale.
+Three experiment threads. A & B are **complete** (2026-08); C is **planned** (2026-08-11).
+Detailed contracts live in the experiment folders; this page is the index and rationale.
 
 ## Thread A — Outlier defect  → `outlier_experiment/PLAN.md`
 
@@ -34,6 +33,24 @@ Does the signal generalise beyond Tree/SVM? Add **RandomForest** (bagging → ex
 Plus a **2-feature iris setup** to *visualise* the boundary and adversarial landing points,
 closing the "prove the mechanism in 2D" open question. Stretch: small MLP + PGD gradient attack.
 
+## Thread C — Defect expansion → `defect_expansion_experiment/PLAN.md`
+
+Three **new defects**, chosen by the principle learned from A & B: *a defect is visible to the
+adversarial-geometry probe iff it imposes a **global, structured** boundary distortion that is
+**separable from accuracy***. Priority order:
+
+1. **Class imbalance** ★ — the **count-controlled sibling** of coverage gap: uniform random
+   deletion vs spatial (coverage-gap) deletion at matched count. Answers whether the
+   coverage-gap signal is the **spatial hole** or just **fewer samples**. Sharpens the
+   clearest result. Report **per-class recall** (imbalance dents minority recall).
+2. **Shortcut / spurious feature (Clever Hans)** — a 5th feature label-correlated in train but
+   not test; the boundary leans on a fake axis while IID accuracy can look fine. Strongest
+   "geometry catches what accuracy misses" candidate. Metric: **per-axis** adversarial
+   displacement.
+3. **Train–test leakage / duplication** — leakage *inflates* accuracy while creating
+   memorized, over-confident local geometry. Tests whether the probe flags a defect accuracy
+   actively hides. Metric: **memorization locality**.
+
 ## Shared infrastructure
 
 - One set of model adapters (RF, XGBoost) feeds **both** threads (outlier H4 = robustness×model).
@@ -43,6 +60,17 @@ closing the "prove the mechanism in 2D" open question. Stretch: small MLP + PGD 
 
 ## Status
 
-- 2026-07-30: plans written, folders scaffolded. No code run yet. Next gate: Phase 0
-  prototype (Tree-overfit + DTA, `tc=0`, sweep `k`,`n_out`) to confirm the outlier signal
-  exists before scaling the grid.
+- 2026-07-30: threads A & B plans written, folders scaffolded.
+- 2026-08: **Thread A (outlier) COMPLETE** — white-box DTA detects `toward` outliers
+  (1.25–1.36×, accuracy-blind), non-monotone, **collapses at the class-size ceiling**;
+  `outward`/`random` weak-null; fragile/white-box-only under HSJ. See
+  `outlier_experiment/FINDINGS_*` + `plots/{toward,random,model_performance}_all*`.
+- 2026-08: **Thread B (model families) COMPLETE** — **coverage gap SURVIVES RandomForest**
+  (clearest signal; RF+HSJ > tree+HSJ); outlier does **not** survive bagging; label noise
+  **intractable** via HSJ (boundary fragmentation → hangs). XGBoost deferred (hangs). See
+  `model_family_experiment/FINDINGS_*`.
+- 2026-08-11: **Thread C (defect expansion) planned** — `defect_expansion_experiment/PLAN.md`.
+  Next gate: **Phase 0 class imbalance** (tree+DTA, spatial-vs-random deletion control) to
+  test the spatial-hole hypothesis before scaling.
+- Deferred/open: XGBoost per-point-timeout rework; 2-feature boundary visualisation of the
+  `toward` tendril; structured (boundary-localized) label noise.
