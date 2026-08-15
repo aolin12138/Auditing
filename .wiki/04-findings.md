@@ -5,6 +5,18 @@
 **Coverage-gap bias is detectable from adversarial geometry while accuracy stays
 flat. Label noise is not.**
 
+> ⚠️ **2026-08 caveat (read before quoting the headline):** the "accuracy stays
+> flat" half is **partly a before-split-injection artifact**. All flagship coverage-gap
+> runs delete the class region from the *whole dataset before* the CV split, so the
+> deleted band is missing from the **test** set too → there are no test points in the
+> hole to misclassify → accuracy stays flat (and for the contested class tc=2 it even
+> *rises* 0.96→0.99, because deleting the hard boundary cases makes the test easier).
+> When injected **train-fold-only** (clean test), the same coverage gap **drops** test
+> accuracy 0.95→0.71 and minority recall to 0.14. The **spread signal is still real**
+> (Finding 3, compression ratio) — but "accuracy-blind" is protocol-dependent, not an
+> intrinsic property of the defect. See `defect_expansion_experiment/FINDINGS_imbalance.md`
+> and Finding 5 below.
+
 ---
 
 ## Finding 1 — Coverage gap: spread rises, accuracy flat (THE result)
@@ -105,6 +117,31 @@ label-noise geometry tracks model structure, not the defect. (Spread not recorde
 separately in this earlier grid — a limitation.)
 
 ---
+
+## Finding 5 — New threads (2026-08): outlier defect, model families, defect expansion
+
+Three threads added after the report; full write-ups live in the experiment folders.
+
+- **Outlier defect** (`outlier_experiment/`, `MECHANISM.md`, `FINDINGS_phase*.md`): a
+  correctly-labelled anomaly at k·σ from the class centroid (train-fold only). White-box
+  DTA detects `toward` outliers (1.25–1.36×, accuracy-blind); `outward`/`random` weak-null.
+  The signal is **non-monotone in distance** — a *Goldilocks window*: null while the outlier
+  is inside versicolor (k≤4), fires in the empty gap between clusters (k=5–10), then
+  **collapses back to baseline at k≥12** when the outlier enters setosa territory (50-seed
+  sweep, `plots/kplateau.png`). Mechanism fully resolved: DTA's "nearest" = tree-graph
+  distance; the outlier's coordinates are split candidates; a pure outlier leaf is an
+  *unbounded strip*, and DTA's one-attribute perturbation strings adversarial points along it.
+- **Model families** (`model_family_experiment/`): coverage gap **SURVIVES RandomForest**
+  (spread 0.66→0.80 with bias; RF+HSJ is a *better* black-box CG detector than tree+HSJ);
+  outlier does **not** survive bagging; label noise is **intractable** via HSJ (boundary
+  fragmentation → pervasive hangs). XGBoost deferred (hangs).
+- **Defect expansion** (`defect_expansion_experiment/`, `PLAN.md`): principle = *a defect is
+  visible iff it imposes a global, structured boundary distortion separable from accuracy*.
+  **Phase 0 class imbalance DONE:** random deletion (imbalance) vs spatial deletion
+  (coverage gap) at matched count — the **spatial hole adds spread on top of the count
+  effect** (H1, CIs separate at frac≥0.5), and **minority recall is the clean discriminator**
+  (coverage gap craters it to 0.14; imbalance holds ~0.61). Next: Phase 1 (RF/SVM + the
+  before-split vs train-only confound quantification), then shortcut-feature and leakage.
 
 ## Metric decomposition note
 
