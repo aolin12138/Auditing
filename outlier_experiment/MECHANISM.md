@@ -84,6 +84,38 @@ apart they land from each other — so the cloud's internal spread barely moves.
 effect is the ONSET cascade, not the post-onset drift. (Saturation prediction §6.1 is
 thus already consistent with k=6 vs k=8 being statistically flat.)
 
+**The full mechanism chain (updated, incorporating the one-attribute insight):**
+1. The outlier enters the tree's threshold bookkeeping (its coordinates are split candidates).
+2. At k=3–4 it sits inside versicolor → no cascade → dip.
+3. At k=5–6 it exits → impurity cascade reorganises the tree (ONSET).
+4. The outlier gets isolated by a SINGLE split (pwid) → pure leaf → tree stops → the leaf is
+   an UNBOUNDED STRIP (tree optimises purity, not compactness).
+5. DTA sends adversarial points into the strip, perturbing only the attribute that fails the
+   threshold — the other attribute stays at the original test value (measured Δ=0.000).
+6. Adversarial points string out along the strip, inheriting the test set's diversity on the
+   untouched axis → mean pairwise distance (spread) jumps above baseline.
+
+So the answer to the user's question: the adversarial examples DON'T all land "on the outlier". SOME of them land at the outlier's leaf (the far-away virginica leaf created by the outlier), while others land at the normal boundary. The cloud gets torn into two far-apart groups → mean pairwise distance increases → spread up.
+
+**The crispest formulation (one attribute ⇒ untouched other attribute):** the outlier leaf is
+entered by a single split (`pwid ≤ 0.74`), so DTA perturbs ONLY the attribute that fails the
+threshold along the path; the other attribute stays EXACTLY at the original test value
+(measured: mean |pwid change| = 0.0000 for setosa→strip points, mean plen preserved for
+versicolor→strip points). Adversarial points therefore inherit the full diversity of the test
+set along the untouched axis and string out along the strip — spread up. If the leaf were a
+tight box (both attributes bounded, like the baseline setosa leaf), the attack would snap both
+attributes and the cloud would collapse into a compact region — baseline spread. The tree
+optimises purity, not compactness, so a pure leaf containing only outliers can be a huge
+unbounded strip.
+
+### Evidence for the mechanism (all measured, fold 1, seed 42, 2D)
+- All 10 outliers land in one leaf; the leaf's rule is `pwid ≤ 0.74 AND plen > 2.06` — the
+  entire bottom strip, unbounded in plen (one split sufficed for purity; the tree stopped).
+- 20/29 adversarial points land in that strip; 10 of them (from setosa test points) keep
+  pwid EXACTLY unchanged (mean |Δpwid| = 0.000) and snap plen to 2.06; 10 (from versicolor
+  test points) keep plen unchanged and snap pwid to 0.73.
+- Resulting mean pairwise distance of the adversarial cloud: 1.40 (k=0) → 1.74 (k=8).
+
 ## 4. Why the effect is attack-specific
 
 - **DTA (white-box):** reads the tree graph directly → every threshold shift is felt as a
