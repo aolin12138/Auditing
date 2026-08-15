@@ -68,20 +68,21 @@ root split. Count is irrelevant here: the location is what enters the threshold 
 |---|------------------|-------------|--------|
 | 0–2 | near virginica | minimal | ~baseline (1.0×) |
 | 3–4 | **inside versicolor** | no clean cascade (same-label points far apart, other-label points around → impurity signal muddied) | **dip, ~1.0×** |
-| 5–6 | just past versicolor | **topological cascade** — class proportions at the root change → the whole tree reorganises (same leaf count, different feature order) | rises, ~1.19× |
-| 6–8+ | in the setosa–versicolor gap | **topology stabilises**, but outlier coordinates keep shifting the split thresholds (root 2.43→2.15, deeper splits 0.94→0.74) | keeps rising, ~1.25× |
+| 5–6 | just past versicolor | **topological cascade** — class proportions at the root change → the whole tree reorganises (same leaf count, different feature order) | **ONSET: jumps to ~1.2–1.3×** |
+| 6–8+ | in the setosa–versicolor gap | **topology stabilises**, outlier coordinates keep shifting the split thresholds (root 2.43→2.15, deeper splits 0.94→0.74) | **PLATEAU** (1.19× vs 1.25× at k=6 vs 8 — CIs [1.14,1.23] vs [1.19,1.31] overlap: NOT a real increase) |
 
 Why the k=3–4 dip: the outlier is *inside* the versicolor cluster but labelled virginica.
 The impurity signal is contradictory (same label far from the class, different label nearby),
 so the tree does not reorganise cleanly — near-baseline spread. The boundary already exists
 there (it separates virginica from versicolor), so the outlier is absorbed.
 
-Why it rises with k even after topology stabilises (k=6→8): tree topology is identical
-(9 leaves, depth 6, same feature at root) and adversarial **displacement does not increase**
-(0.79 → 0.74 L2) — but the **split values drift** because the outlier coordinates move.
-Different thresholds → different adversarial landing coordinates → different spread. The
-effect is spatial, but it travels *through the tree's threshold bookkeeping*, never through a
-Euclidean search by DTA.
+Why it PLATEAUS after onset (k=6→8, corrected): the tree topology is identical
+(9 leaves, depth 6, same feature at root) and adversarial displacement is flat (0.79→0.74 L2).
+The split-value drift (thresholds following the outlier's coordinates) is REAL but
+second-order: moving a fence slightly changes where adversarial points land, but not how far
+apart they land from each other — so the cloud's internal spread barely moves. The dominant
+effect is the ONSET cascade, not the post-onset drift. (Saturation prediction §6.1 is
+thus already consistent with k=6 vs k=8 being statistically flat.)
 
 ## 4. Why the effect is attack-specific
 
@@ -103,7 +104,9 @@ Euclidean search by DTA.
 ## 6. Predictions this mechanism makes (testable)
 
 1. **Saturation:** push k→∞ and the outlier becomes the extreme point of every relevant
-   feature; thresholds asymptote → spread plateaus (k=12+ should stop the rise).
+   feature; thresholds asymptote → spread plateaus. **Already consistent with the data:**
+   k=6 vs k=8 spread is statistically FLAT (tree_d10 1.19×[1.14,1.23] vs 1.25×[1.19,1.31],
+   overlapping CIs) — the plateau is reached immediately after the onset cascade.
 2. **Axis-dependence:** outliers along a single feature (`axis='feat'`) shift only that
    feature's thresholds → weaker, feature-localised signal.
 3. **Count matters only via the root:** 1 outlier can shift a root threshold (it only takes
@@ -115,7 +118,9 @@ Euclidean search by DTA.
 ## 7. One-sentence summary
 
 The `toward` outlier acts not by pulling the boundary toward itself but by **entering the
-tree's threshold bookkeeping** — first through the global impurity cascade (tree reorganisation)
-and then through its own coordinates (split-value drift) — and DTA, whose "nearest wrong leaf"
-is a tree-graph search with `threshold ± offset` landing coordinates, converts both stages
-into a measurable change in adversarial spread.
+tree's threshold bookkeeping** — primarily through the global impurity cascade (tree
+reorganisation) at the moment the outlier EXITS the other class's cluster (the onset), and
+secondarily through its own coordinates (split-value drift, which shifts landing points but
+barely changes the cloud's internal spread). DTA, whose "nearest wrong leaf" is a tree-graph
+search with `threshold ± offset` landing coordinates, converts the cascade into a measurable
+jump in adversarial spread that then PLATEAUS with further distance.
