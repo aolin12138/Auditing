@@ -70,7 +70,16 @@ adversarial-geometry probe iff it imposes a **global, structured** boundary dist
   **intractable** via HSJ (boundary fragmentation → hangs). XGBoost deferred (hangs). See
   `model_family_experiment/FINDINGS_*`.
 - 2026-08-11: **Thread C (defect expansion) planned** — `defect_expansion_experiment/PLAN.md`.
-  Next gate: **Phase 0 class imbalance** (tree+DTA, spatial-vs-random deletion control) to
-  test the spatial-hole hypothesis before scaling.
+- 2026-08: **Thread C Phase 0 class imbalance DONE** (tree+DTA, 30 seeds) — spatial hole adds
+  spread on top of the count effect (H1, CIs separate at frac≥0.5); minority recall the clean
+  discriminator. `FINDINGS_imbalance.md`, `plots/imbalance_phase0.png`.
+- 2026-08-16: **Thread C Phase 1 class imbalance DONE** (`FINDINGS_imbalance_p1.md`) —
+  across SVM/tree/RF + black-box HSJ, **minority recall is the robust model-agnostic separator**
+  (spatial craters it to 0.14–0.35 vs random 0.55–0.77, tight CIs); the scalar-spread gap
+  survives only partially (RF directional n=3, SVM at frac 0.95, absent on tree+HSJ). **Class
+  asymmetry confirmed** (deleting from separable setosa = null geometry + recall). **Accuracy
+  confound quantified** (before-split acc→1.000 vs train-only→0.714, 30 seeds). Figs
+  `plots/imbalance_p1_{models,asymmetry,confound}.png`. Next gate: **Phase 0 shortcut /
+  spurious feature** (PLAN §3).
 - Deferred/open: XGBoost per-point-timeout rework; 2-feature boundary visualisation of the
   `toward` tendril; structured (boundary-localized) label noise.

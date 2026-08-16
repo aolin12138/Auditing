@@ -140,8 +140,18 @@ Three threads added after the report; full write-ups live in the experiment fold
   **Phase 0 class imbalance DONE:** random deletion (imbalance) vs spatial deletion
   (coverage gap) at matched count — the **spatial hole adds spread on top of the count
   effect** (H1, CIs separate at frac≥0.5), and **minority recall is the clean discriminator**
-  (coverage gap craters it to 0.14; imbalance holds ~0.61). Next: Phase 1 (RF/SVM + the
-  before-split vs train-only confound quantification), then shortcut-feature and leakage.
+  (coverage gap craters it to 0.14; imbalance holds ~0.61).
+  **Phase 1 class imbalance DONE (2026-08-16, `FINDINGS_imbalance_p1.md`):** across models
+  (SVM/tree/RF + black-box HSJ), **minority recall is the robust, model-agnostic separator**
+  of coverage gap vs imbalance (spatial recall craters to 0.14–0.35 vs random 0.55–0.77 at
+  frac 0.85–0.95, tight CIs on every model). The *scalar-spread* gap survives only partially
+  — RF directional (n=3), SVM at frac 0.95 (1.46±0.11 vs 1.23±0.09), **absent on tree+HSJ**
+  (the weak/hang-prone combo). **Class ASYMMETRY confirmed:** deleting from a *separable* class
+  (setosa) is null in both geometry and recall — the defect must distort a *contested* boundary.
+  **Coverage-gap accuracy confound quantified (30 seeds):** before-split injection makes
+  test acc RISE to 1.000±0.000 (recall 1.000) while train-only DROPS to 0.714±0.001
+  (recall 0.143) — a pure protocol artifact confirming the flagship “accuracy-blind” headline
+  was partly a test-set-removal artifact. Next: shortcut-feature (PLAN §3), then leakage.
 
 ## Metric decomposition note
 

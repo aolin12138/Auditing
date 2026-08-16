@@ -31,5 +31,7 @@ extend.log
 *.log
 *.err
 **/progress.txt
+**/progress_*.txt
+**/*_pid.txt
 **/run_*.log
 **/run_*.err

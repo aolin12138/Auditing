@@ -1,6 +1,6 @@
 # Defect Expansion Experiment — Comprehensive Plan
 
-**Created:** 2026-08-11 · **Status:** planned (Phase 0 pending) · **Owner:** research thread 3
+**Created:** 2026-08-11 · **Status:** imbalance Phase 0 + Phase 1 DONE (2026-08-16); shortcut/leakage pending · **Owner:** research thread 3
 
 Extends the adversarial-geometry dataset-auditing study with three new training-data
 defects, chosen by a single predictive principle learned from the first two threads
@@ -188,8 +188,8 @@ Reuse `COLS` from `model_family_experiment` + add defect-specific columns:
 
 ## 6. Sequence & gates
 
-1. **Phase 0 class imbalance** (tree+DTA, the spatial-vs-random control) → GO/NO-GO on H1.
-2. If GO: Phase 1 imbalance (RF/SVM, per-class recall).
+1. **Phase 0 class imbalance** (tree+DTA, the spatial-vs-random control) → GO/NO-GO on H1. ✅ DONE (`FINDINGS_imbalance.md`).
+2. If GO: Phase 1 imbalance (RF/SVM, per-class recall). ✅ DONE (`FINDINGS_imbalance_p1.md`, `run_p1.py`, `run_confound.py`) — minority recall = robust model-agnostic separator; spread gap partial; asymmetry + accuracy-confound confirmed.
 3. **Phase 0 shortcut** → GO/NO-GO on per-axis displacement.
 4. **Phase 0 leakage** → GO/NO-GO on accuracy-inflation + local anomaly.
 5. Each phase: findings doc `FINDINGS_<defect>.md`, plots in `plots/`, journal Attempt entry.
