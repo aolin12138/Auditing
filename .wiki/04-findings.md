@@ -153,6 +153,35 @@ Three threads added after the report; full write-ups live in the experiment fold
   (recall 0.143) — a pure protocol artifact confirming the flagship “accuracy-blind” headline
   was partly a test-set-removal artifact. Next: shortcut-feature (PLAN §3), then leakage.
 
+## Finding 6 — Cross-dataset variance: the SPREAD signal is fragile, RECALL is robust (2026-08-16)
+
+`defect_expansion_experiment/` (`run_variance.py`, `run_confound.py`, `FINDINGS_variance.md`,
+`plots/variance_{iris,wine}.png`, `variance_svm_{iris,wine}.png`, `variance_spread_summary.png`).
+Re-ran the imbalance-vs-coverage-gap contrast on a **second dataset (wine, 13-D)** and a **second
+model+attack (svm + black-box HSJ)**, factored by injection **protocol** (train-only vs
+before-split), features standardized, 30 seeds (tree+DTA) / 15 (svm+HSJ).
+
+- **Recall discriminator is robust** across dataset AND model/attack: spatial (coverage gap)
+  craters minority recall much harder than random (imbalance) — wine train-only frac 0.9:
+  spatial 0.48–0.52 vs random 0.90 (tight CIs, both tree+DTA and svm+HSJ).
+- **The adversarial-SPREAD signal is fragile.** Strong only on **iris + white-box tree/DTA**
+  (spatial 1.26×); collapses to ~1.04× on **13-D wine** and to ~1.11× under **black-box HSJ** on
+  iris — fragile to *both dimensionality and attack*. Measured cause = **distance concentration**
+  (pairwise-distance std/mean 0.54 iris vs 0.29 wine): the mean pairwise distance goes numb in
+  higher dimensions. → motivates a **dimension-robust spread metric** (`PLAN.md §8`).
+- **before-split spread “signal” is a test-set COMPOSITION artifact** (not boundary detection):
+  before-split deletes the target class from the *test* set (11.8→1.2 pts, same for both arms),
+  so its tight adversarial cluster drops out and the surviving c1/c2 cloud is identical → both
+  arms give the same spread; the surviving-class spreads are unchanged (c1 3.48→3.50, c2 3.12→
+  3.19). It's the geometry-sibling of the accuracy confound (Finding 5 caveat). **train-only is
+  the correct protocol.**
+- **Class asymmetry + accuracy confound both replicate** across datasets/models (before-split
+  lifts accuracy +0.13; deleting from a separable class = null geometry + recall).
+
+**Honest bottom line:** the transferable, model-/dimension-robust signal is **per-class recall**;
+the adversarial-**geometry/spread** signal only clearly fires for iris + white-box tree/DTA and
+needs a dimension-robust metric to generalize.
+
 ## Metric decomposition note
 
 Density combines cluster size and spread. On Tree+DTA coverage gap, cluster size

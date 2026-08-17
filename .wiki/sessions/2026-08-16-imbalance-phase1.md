@@ -51,3 +51,47 @@ parquet cell or a viewed figure.
 - tree+HSJ survivorship bias (50/210 hung) — its spread panel is not reliable; recall is.
 - **Next gate:** Phase 0 shortcut / spurious feature (`PLAN.md §3`) — the strongest
   "geometry catches what accuracy misses" candidate.
+
+---
+
+## Continued same day — variance study, mechanisms, SVM, tooling (2026-08-16)
+
+After Phase 1, the session extended into a full cross-dataset variance study, mechanism
+interrogation, a second model+attack, and a tooling review. All committed/pushed to
+origin/master.
+
+### Cross-dataset variance (`run_variance.py`, `run_confound.py`, `FINDINGS_variance.md`)
+Re-ran imbalance-vs-coverage-gap on **wine (13-D)** as well as iris, factored by injection
+protocol (train-only vs before-split), standardized, tree+DTA (30 seeds) and **svm+HSJ (15
+seeds)**. Figures: `variance_{iris,wine}.png`, `variance_svm_{iris,wine}.png`,
+`variance_spread_summary.png` (fragility map).
+- **Recall discriminator is robust** across dataset AND model/attack (wine spatial recall
+  0.48 vs random 0.90).
+- **Spread signal is fragile** to *both* dimensionality (iris 1.26× → wine ~1.04×) and attack
+  (svm+HSJ ~1.11× on iris). Cause = distance concentration (std/mean 0.54 iris vs 0.29 wine).
+- **before-split spread move is a test-set composition artifact** (target class dropped from
+  test; surviving-class spreads flat) — geometry-sibling of the accuracy confound.
+- Class asymmetry + accuracy confound replicate cross-dataset.
+
+### Mechanisms logged (obs → hypothesis → evidence → conclusion) in `FINDINGS_variance.md`
+M1 random-vs-coverage-gap (directional boundary vs density; refined "pure density"); M2
+before-split = composition artifact (decomposition refutes boundary hypothesis); M3
+spread-fragility = dimensionality not overlap; M4 how `min_recall` is computed (= TP/(TP+FN) on
+tc, clean test) and why (per-class, recall-not-precision, distance-free; naming caveat = minority
+not minimum).
+
+### Tooling / skills review (`.wiki/10-tooling-and-skills.md`)
+Reviewed `nature-skills` (18 research skills). Top picks: **nature-figure** (submission figures +
+QA scripts), **nature-statistics**, writing/polishing, literature search (for the Dost baseline).
+Concrete viz fixes flagged: our **red/green palette is not colorblind-safe** (switch to blue/
+orange + linestyle), add **vector (PDF/SVG) export**, panel labels, a shared `plotstyle.py`, and a
+glyph-size floor. Not yet installed/applied — awaiting go-ahead.
+
+### NEXT (no context lost)
+**Dimension-robust spread metric** — `defect_expansion_experiment/PLAN.md §8`: implement kNN-ratio,
+LOF-style density ratio, PCA-then-spread, kNN-graph local spread; recompute the wine/iris
+adversarial clouds; check whether any recovers the coverage-gap-vs-imbalance signal raw spread
+lost (success = wine CIs separate at frac ≥ 0.7 AND iris still separates). Deliverables:
+`run_robust_metric.py`, `plot_robust_metric.py`, `FINDINGS_robust_metric.md`.
+Then: Phase 0 shortcut/spurious-feature defect (PLAN §3). Optional: apply the viz optimizations /
+install nature-figure for the report-figure pass.

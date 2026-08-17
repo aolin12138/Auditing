@@ -17,7 +17,8 @@ dataset defects from the spatial geometry of adversarial examples.
 | [06-lessons-gotchas.md](06-lessons-gotchas.md) | Pitfalls, corrections, subtle bugs |
 | [07-repo-map.md](07-repo-map.md) | Where everything lives in the repo |
 | [08-open-questions.md](08-open-questions.md) | Limitations and future work |
-| [09-planned-experiments.md](09-planned-experiments.md) | Threads A (outlier) + B (model families) DONE; C (defect expansion: imbalance/shortcut/leakage) in progress — see `defect_expansion_experiment/PLAN.md` |
+| [09-planned-experiments.md](09-planned-experiments.md) | Threads A (outlier) + B (model families) DONE; C (defect expansion) — imbalance Phase 0+1 + cross-dataset variance DONE; **next = dimension-robust spread metric** (`defect_expansion_experiment/PLAN.md §8`) |
+| [10-tooling-and-skills.md](10-tooling-and-skills.md) | Reusable research skills (`nature-skills`) + concrete plot/visualization + rigor optimizations |
 | [sessions/](sessions/) | Dated session logs |
 
 ## One-paragraph summary
@@ -32,12 +33,17 @@ accuracy (so accuracy already flags it) or its direction depends on class
 separability. Verified with a compression-ratio test that distinguishes a real
 attack signal (ratio ~0.70) from an artifact (ratio → 1.0).
 
-## Status (2026-07-24)
+## Status (2026-08-16)
 
-- Three experiment grids complete (360 runs each): Tree+DTA, Tree/SVM+HSJ (coverage gap), Tree/SVM+HSJ (label noise)
-- Mid-year report drafted (`midyear_report.docx`)
-- Conference deck fixed (`presentation/deck.html`)
-- 6 report figures generated (`figures/report/`)
+- Threads **A (outlier)** + **B (model families)** complete; **C (defect expansion)**: class
+  imbalance **Phase 0 + Phase 1** done, plus a **cross-dataset variance study** (iris + wine,
+  tree/DTA + svm/HSJ) — see `defect_expansion_experiment/FINDINGS_{imbalance,imbalance_p1,variance}.md`.
+- **Key 2026-08 result:** per-class **recall** is the robust cross-dataset/cross-model separator;
+  the adversarial-**spread** signal is dimension- and attack-fragile (Finding 6). **Next gate =
+  dimension-robust spread metric** (`PLAN.md §8`).
+- Earlier: 3 grids (360 runs each), mid-year report (`midyear_report.docx`), conference deck,
+  6 report figures (`figures/report/`).
+- Reviewed reusable research skills (`nature-skills`) → [10-tooling-and-skills.md](10-tooling-and-skills.md).
 - **Repo:** github.com/aolin12138/Auditing (origin), upstream Aidan-Jared/Auditing
 
 ## Headline numbers

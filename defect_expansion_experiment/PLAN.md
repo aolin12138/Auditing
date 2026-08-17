@@ -190,9 +190,14 @@ Reuse `COLS` from `model_family_experiment` + add defect-specific columns:
 
 1. **Phase 0 class imbalance** (tree+DTA, the spatial-vs-random control) → GO/NO-GO on H1. ✅ DONE (`FINDINGS_imbalance.md`).
 2. If GO: Phase 1 imbalance (RF/SVM, per-class recall). ✅ DONE (`FINDINGS_imbalance_p1.md`, `run_p1.py`, `run_confound.py`) — minority recall = robust model-agnostic separator; spread gap partial; asymmetry + accuracy-confound confirmed.
-3. **Phase 0 shortcut** → GO/NO-GO on per-axis displacement.
-4. **Phase 0 leakage** → GO/NO-GO on accuracy-inflation + local anomaly.
-5. Each phase: findings doc `FINDINGS_<defect>.md`, plots in `plots/`, journal Attempt entry.
+3. **Cross-dataset variance check** (tree+DTA + svm+HSJ on iris + wine, both protocols). ✅ DONE
+   (`FINDINGS_variance.md`, `run_variance.py`, `run_confound.py`) — recall discriminator robust
+   across dataset & model; **adversarial-SPREAD signal is fragile to dimensionality AND attack**;
+   before-split = a test-set composition artifact. **→ motivates §8.**
+4. **§8 dimension-robust spread metric** (methodological — the next gate).
+5. **Phase 0 shortcut** → GO/NO-GO on per-axis displacement.
+6. **Phase 0 leakage** → GO/NO-GO on accuracy-inflation + local anomaly.
+7. Each phase: findings doc `FINDINGS_<defect>.md`, plots in `plots/`, journal Attempt entry.
 
 **Alignment gate:** confirm this plan with the user before Phase 1 of any defect (the Phase 0
 pilots are cheap and safe to run first).
@@ -204,3 +209,52 @@ pilots are cheap and safe to run first).
   timeout driver; expect NaN cells at high severity.
 - Imbalance changes class priors → for HSJ, ensure enough correctly-classified test seeds of
   the minority class exist before attacking (guard against empty attack sets).
+
+---
+
+## 8. Dimension-robust spread metric  ★ NEXT GATE (methodological)
+
+### Motivation (from the variance study, `FINDINGS_variance.md`)
+The project's headline metric — OPTICS **mean within-cluster pairwise distance** (spread) — is
+**not dimension-robust**. It fires cleanly only on iris + white-box tree/DTA (spatial 1.26×) and
+collapses to ~1.0× on 13-D wine and/or under black-box HSJ. Measured root cause = **distance
+concentration**: the pairwise-distance spread (std/mean) is 0.54 on iris but 0.29 on wine, so the
+*mean* distance goes numb in higher dimensions. The recall discriminator is robust, but if the
+geometry angle is to survive beyond iris we need a spread measure that resists concentration.
+
+### Goal
+Find a spread/dispersion measure that **recovers the coverage-gap (spatial) vs imbalance (random)
+signal on wine** that raw spread lost, **while still agreeing with raw spread on iris** (sanity).
+
+### Candidate metrics (each resists concentration by using ratios/ranks or a subspace)
+1. **kNN-distance ratio / relative contrast** — per adversarial point, dist to its k-th nearest
+   neighbour ÷ the cloud's median distance (or its 1-NN distance). Ratios cancel the global scale
+   that concentrates. Report the mean/median ratio per cluster.
+2. **Local density ratio (LOF-style)** — Local Outlier Factor: a point's local reachability
+   density relative to its neighbours'. A ratio of local densities → uniform inflation cancels.
+3. **PCA-then-spread (subspace projection)** — project the adversarial cloud onto its top-m
+   principal components (motivated: DTA displacement is carried by only ~2.8/13 axes on wine),
+   then run the existing OPTICS spread in the reduced space. Removes the noise dimensions that
+   drive concentration.
+4. **kNN-graph local spread** — mean distance to the k nearest neighbours only (local), not all
+   pairwise; the large/bulk distances (which concentrate most) are excluded.
+
+### Test protocol
+Reuse the exact `run_variance.py` conditions (iris + wine · tree+DTA and svm+HSJ · train-only ·
+spatial vs random · frac sweep · 30/15 seeds). For each candidate, recompute a normalised metric
+on the **same** adversarial clouds and check, with 95% CIs:
+- (a) **Recovery:** on wine, do spatial vs random CIs separate at frac ≥ 0.7 (train-only)?
+- (b) **Sanity:** on iris, does the metric still separate (must not break the working case)?
+- (c) **Concentration:** does the metric's std/mean stay comparable across iris↔wine (evidence it
+  is scale/dimension-robust, unlike raw spread)?
+
+### Success criteria
+1. ∃ ≥1 candidate where **wine spatial vs random separate (CIs) at frac ≥ 0.7** AND **iris still
+   separates**. ✅/❌
+2. If **none** recover the signal → conclusion (also valuable): the adversarial-geometry spread
+   signal is **genuinely dimension-limited**, and **per-class recall** is the recommended
+   black-box diagnostic. State this explicitly.
+
+### Deliverables
+`run_robust_metric.py` (imports the adversarial clouds / re-generates), `plot_robust_metric.py`,
+`FINDINGS_robust_metric.md` (per-candidate recovery table + verdict), journal Attempt entry.

@@ -114,6 +114,30 @@ HSJ frequently fails to converge on decision trees. The HSJ runners execute each
 row in a fresh subprocess with a hard timeout; hung rows are recorded NaN and
 skipped (12–27 per grid). Don't run HSJ-on-tree inline without a timeout.
 
+## before-split "spread signal" is a test-set COMPOSITION artifact (2026-08-16)
+
+When a defect is injected **before** the CV split, the target class is removed from the *test*
+set too. Its adversarial examples then drop out of the cloud, and — because the target-class
+adversarial cluster is *tight* — the mean spread **rises** to the (looser) surviving-class level.
+Measured on wine (frac 0.9): target-class test points 11.8→1.2, adversarial cloud c0 8→0.8, while
+the c1 and c2 cluster spreads stay flat (3.48→3.50, 3.12→3.19). So before-split moves the spread
+**identically for coverage-gap and random imbalance** — not because the metric caught a boundary
+change, but because both remove the same test count. **Lesson:** before-split is the wrong
+protocol for the geometry metric *and* for accuracy; always inject **train-only** with a clean
+test. Verify a "signal" by decomposing the adversarial cloud per class before believing it.
+
+## The spread metric is dimension- and attack-fragile; recall is robust (2026-08-16)
+
+The OPTICS mean-pairwise-distance **spread** signal (spatial > random) fires cleanly only on
+**iris + white-box tree/DTA** (1.26×). On **13-D wine** it collapses to ~1.04×, and under
+**black-box HSJ** it weakens to ~1.11× — fragile to *both* dimensionality and attack. Root cause
+(measured) = **distance concentration**: pairwise-distance std/mean is 0.54 on iris but 0.29 on
+wine, so the mean distance goes numb in higher dimensions. **Per-class recall** (a distance-free
+classification metric) stayed the robust discriminator across every dataset and model. **Lesson:**
+don't over-generalize the spread/geometry headline from iris; when reporting geometry, report the
+distance-concentration ratio too, and prefer recall as the transferable signal. Fix candidate =
+dimension-robust spread (`PLAN.md §8`).
+
 ## .gitignore quirk
 
 Quoted filenames (`"foo bar.zip"`) do NOT work in .gitignore. Use unquoted

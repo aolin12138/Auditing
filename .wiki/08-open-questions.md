@@ -9,12 +9,15 @@ bias into the training fold only and keep a fixed clean test set**. This isolate
 "does the model's geometry change" from "do we have different test points."
 Cheapest high-value experiment. See [06-lessons-gotchas.md](06-lessons-gotchas.md).
 
-### Higher-dimensional validation
-Everything is on iris (4 features). OPTICS is density-based and degrades in high
-dimensions (reachability distances concentrate). **Does the spread signal
-survive?** Add 1–2 higher-dim datasets (digits, or synthetic 10–20D). If OPTICS
-fails, may need dimension-robust measures (relative density vs. original data
-density, Hopkins statistic, kNN/rank-based).
+### Higher-dimensional validation — ✅ INVESTIGATED (2026-08-16): spread does NOT survive
+Re-ran the imbalance contrast on **wine (13-D)** + **svm/HSJ** (`FINDINGS_variance.md`, Finding 6).
+**The adversarial-spread signal collapses in higher dimensions** (iris spatial 1.26× → wine
+~1.04×) and under black-box HSJ (~1.11×) — measured cause = distance concentration (std/mean 0.54
+iris vs 0.29 wine). Per-class **recall** stayed robust. **→ next: a dimension-robust spread
+metric** (kNN-ratio, LOF-style density ratio, PCA-then-spread, kNN-graph local spread) — test
+whether any recovers the wine signal raw spread lost. Full spec in
+`defect_expansion_experiment/PLAN.md §8`. A >50-D set (digits) would stress it further.
+**Interim conclusion:** if no robust metric is found, recall is the recommended black-box diagnostic.
 
 ### A defect that hurts data quality without collapsing accuracy
 The strongest test of the whole premise. Label noise fails partly because it
@@ -48,6 +51,10 @@ headline result.
 - **Tree+HSJ is fragile** — weak signal, non-convergence, non-monotonic at
   extreme bias. Don't lean on it. SVM+HSJ and Tree+DTA are the trustworthy
   combinations.
+- **The spread metric itself is dimension- and attack-fragile** (2026-08-16, Finding 6): trust it
+  only for iris + white-box DTA; on wine / under HSJ it goes flat. Prefer **recall** cross-dataset.
+- **before-split is the wrong protocol** for both accuracy and the geometry metric — always
+  train-only with a clean test (`06-lessons-gotchas.md`).
 - **Benchmark against existing bias detection.** Aiden's notes mention Katerina
   Dost's bias-detection work. Should we compare our signal against an existing
   method rather than treating it as purely exploratory?
