@@ -6,7 +6,7 @@ Per dataset, one 3x2 figure — as the defect grows:
   lines = spatial (coverage gap) vs random (imbalance), 30 seeds, 95% CI.
 Answers, for this (model, attack): how acc changes, how spread changes, coverage-gap vs
 random, and how train-only vs before-split differs — replicated on iris (4-D) and wine (13-D).
--> plots/variance_<dataset>.png  +  plots/variance_spread_summary.png
+-> plots/variance/<tree_dta|svm_hsj>_<dataset>.png  +  plots/variance/spread_fragility_map.png
 """
 import os
 for _v in ['OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS', 'NUMEXPR_NUM_THREADS']:
@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 import plotstyle as ps; ps.apply()
 
 HERE = Path(__file__).resolve().parent
-PLOTS = HERE / 'plots'; PLOTS.mkdir(exist_ok=True)
+PLOTS = HERE / 'plots'; PLOTS.mkdir(exist_ok=True); (PLOTS / 'variance').mkdir(exist_ok=True)
 DFS = {'tree+DTA': pl.read_parquet(HERE / 'results_variance.parquet')}
 _svm = HERE / 'results_variance_svm.parquet'
 if _svm.exists():
@@ -89,7 +89,7 @@ def fig_dataset(ds, df=None, ma='tree+DTA', suffix=''):
                  'coverage gap (spatial) vs imbalance (random) · train-only vs before-split',
                  fontsize=12)
     fig.tight_layout(rect=[0, 0, 1, 0.95])
-    p = PLOTS / f'variance{suffix}_{ds}'; ps.save(fig, p); plt.close(fig)   # PNG + vector PDF
+    p = PLOTS / 'variance' / f'{("tree_dta" if suffix == "" else "svm_hsj")}_{ds}'; ps.save(fig, p); plt.close(fig)   # PNG + vector PDF
     print('wrote', p)
 
 
@@ -111,7 +111,7 @@ def fig_summary():
                  '→ the geometry signal is fragile to BOTH dimensionality and attack', fontsize=9.5)
     ax.legend(fontsize=8, loc='upper left')
     fig.tight_layout()
-    p = PLOTS / 'variance_spread_summary'; ps.save(fig, p); plt.close(fig)   # PNG + vector PDF
+    p = PLOTS / 'variance' / 'spread_fragility_map'; ps.save(fig, p); plt.close(fig)   # PNG + vector PDF
     print('wrote', p)
 
 

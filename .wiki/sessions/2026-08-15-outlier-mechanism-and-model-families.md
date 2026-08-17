@@ -67,7 +67,7 @@ imbalance→shortcut→leakage (`PLAN.md`). **Phase 0 (tree+DTA, 30 seeds):** ra
 spatial hole adds spread on top of the count effect (both rise; spatial > random, CIs
 separate at frac≥0.5, 1.37× vs 1.24× at 95%). H2 **confirmed** — minority-class recall is
 the clean discriminator (coverage gap craters it to 0.14; imbalance holds ~0.61). →
-`FINDINGS_imbalance.md`, `plots/imbalance_phase0.png`.
+`FINDINGS_imbalance.md`, `plots/imbalance/phase0_spread_vs_random.png`.
 
 ## Artifacts produced
 - `outlier_experiment/`: `MECHANISM.md`, `run_kplateau.py`+`plot_kplateau.py` (kplateau.png),

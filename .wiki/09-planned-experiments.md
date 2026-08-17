@@ -72,14 +72,14 @@ adversarial-geometry probe iff it imposes a **global, structured** boundary dist
 - 2026-08-11: **Thread C (defect expansion) planned** — `defect_expansion_experiment/PLAN.md`.
 - 2026-08: **Thread C Phase 0 class imbalance DONE** (tree+DTA, 30 seeds) — spatial hole adds
   spread on top of the count effect (H1, CIs separate at frac≥0.5); minority recall the clean
-  discriminator. `FINDINGS_imbalance.md`, `plots/imbalance_phase0.png`.
+  discriminator. `FINDINGS_imbalance.md`, `plots/imbalance/phase0_spread_vs_random.png`.
 - 2026-08-16: **Thread C Phase 1 class imbalance DONE** (`FINDINGS_imbalance_p1.md`) —
   across SVM/tree/RF + black-box HSJ, **minority recall is the robust model-agnostic separator**
   (spatial craters it to 0.14–0.35 vs random 0.55–0.77, tight CIs); the scalar-spread gap
   survives only partially (RF directional n=3, SVM at frac 0.95, absent on tree+HSJ). **Class
   asymmetry confirmed** (deleting from separable setosa = null geometry + recall). **Accuracy
   confound quantified** (before-split acc→1.000 vs train-only→0.714, 30 seeds). Figs
-  `plots/imbalance_p1_{models,asymmetry,confound}.png`.
+  `plots/imbalance/p1_{models,asymmetry,confound}.png`.
 - 2026-08-17: **§8 dimension-robust spread metric DONE** (`FINDINGS_robust_metric.md`; same-clouds
   guarantee verified — tree re-run 1260/1260 cells identical, svm re-run reproduces documented
   numbers to 3 decimals) — **substantive verdict = honest-negative: the spread signal is
@@ -88,7 +88,7 @@ adversarial-geometry probe iff it imposes a **global, structured** boundary dist
   metrics provably null (uniform stretch); PCA equalises concentration (0.56→0.82) without
   enlarging the effect; raw LOF numerically unstable. Next gate: **Phase 0 shortcut / spurious
   feature** (PLAN §3).
-- 2026-08-17: **Thread C Phase 0 shortcut DONE** (`FINDINGS_shortcut.md`, `plots/shortcut.png`) —
+- 2026-08-17: **Thread C Phase 0 shortcut DONE** (`FINDINGS_shortcut.md`, `plots/shortcut/phase0.png`) —
   **GO**: H1 CONFIRMED on iris+wine (spurious-axis fraction of adv displacement rises
   monotonically, 0.11→0.50 iris / 0.00→1.00 wine, tight CIs — the first geometry signal to fire
   on wine at all); first spurious split rises to the root (reliance manipulation check);

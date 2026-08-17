@@ -3,7 +3,7 @@
 Overfit tree (`max_depth=None`) + white-box DecisionTreeAttack. iris, 5-fold, class `tc=2`
 (virginica), spatial arm sorts by feature 2 (petal length). **30 seeds.** Both arms delete the
 same COUNT from the train fold; test kept clean. Data: `results_imbalance.parquet`.
-Fig: `plots/imbalance_phase0.png`. Runner: `run_imbalance.py`.
+Fig: `plots/imbalance/phase0_spread_vs_random.png`. Runner: `run_imbalance.py`.
 
 ## H1 — CONFIRMED: the spatial hole adds spread on top of the count effect
 

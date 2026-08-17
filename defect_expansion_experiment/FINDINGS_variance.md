@@ -7,7 +7,7 @@ vs **random = imbalance**) and injection **protocol** (**train-only** clean test
 findings are iris-specific.
 
 - Runner: `run_variance.py` · data: `results_variance.parquet` (1260 rows) · figs:
-  `plots/variance_iris.png`, `plots/variance_wine.png`, `plots/variance_spread_summary.png`.
+  `plots/variance/tree_dta_iris.png`, `plots/variance/tree_dta_wine.png`, `plots/variance/spread_fragility_map.png`.
 - Features **standardized** (required for wine: proline otherwise dominates all distances).
 - Per dataset, target class + spatial feature chosen by measurement (most contested class =
   lowest baseline recall; spatial feature = most class-discriminative):
@@ -45,7 +45,7 @@ Same cell, normalised spread (× clean baseline), frac=0.9, train-only:
 
 On iris the spatial hole clearly inflates adversarial spread (the flagship geometry signal); on
 **wine (13-D) the spread barely moves** (1.04× spatial vs 1.00× random — CIs nearly touch).
-`variance_spread_summary.png` shows it at a glance: iris-spatial climbs to ~1.25×, wine-spatial
+`spread_fragility_map.png` shows it at a glance: iris-spatial climbs to ~1.25×, wine-spatial
 crawls to ~1.04×. This is direct evidence for the long-standing caveat (`MEETING_NOTES.md`,
 `.wiki/06`): **the OPTICS-spread metric degrades as dimensionality rises** — it is *not* a
 reliable cross-dataset diagnostic. The robust cross-dataset separator is **recall (F1)**, not
@@ -84,8 +84,8 @@ OPTICS) — see PLAN / open questions.
 ## F4 — SVM + HSJ (black-box) replicates the mechanisms AND weakens the spread signal further
 
 Ran **svm + HopSkipJump** across both datasets (2×2 structure×protocol × frac × 15 seeds,
-`results_variance_svm.parquet`; `plots/variance_svm_{iris,wine}.png`,
-`plots/variance_spread_summary.png` fragility map).
+`results_variance_svm.parquet`; `plots/variance/svm_hsj_{iris,wine}.png`,
+`plots/variance/spread_fragility_map.png` fragility map).
 
 - **Recall discriminator replicates and is strong** (train-only, frac 0.9): spatial vs random
   minority recall — iris 0.44 vs 0.67, **wine 0.48 vs 0.90** (gap 0.42). Robust across dataset

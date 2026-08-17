@@ -9,7 +9,7 @@ Plus a concentration figure: std/mean of the per-point dispersion quantity on cl
 baseline clouds, per dataset, per metric — with the raw-spread 0.54 (iris) / 0.30 (wine)
 reference. A robust metric should equalise these (ratio ~1), like m3.
 
--> plots/robust_{tree+dta,svm+hsj}.png + plots/robust_concentration.png (PNG + vector PDF)
+-> plots/spread_metric/candidates_{tree_dta,svm_hsj}.png + plots/spread_metric/concentration.png (PNG + vector PDF)
 """
 import os
 for _v in ['OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS', 'NUMEXPR_NUM_THREADS']:
@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 import plotstyle as ps; ps.apply()
 
 HERE = Path(__file__).resolve().parent
-PLOTS = HERE / 'plots'; PLOTS.mkdir(exist_ok=True)
+PLOTS = HERE / 'plots'; PLOTS.mkdir(exist_ok=True); (PLOTS / 'spread_metric').mkdir(exist_ok=True)
 FRAC = [0.0, 0.2, 0.4, 0.6, 0.8, 0.9]
 METRIC_LAB = {
     'm0_raw_spread':  'm0 raw OPTICS spread (reference — fragile on wine)',
@@ -78,7 +78,7 @@ def fig_metrics(ma):
     for i, metric in enumerate(ORDER):
         axes[i][0].text(-0.42, 0.5, METRIC_LAB[metric], transform=axes[i][0].transAxes,
                         rotation=90, va='center', ha='center', fontsize=8.5)
-    p = PLOTS / f'robust_{ma}'; ps.save(fig, p); plt.close(fig)
+    p = PLOTS / 'spread_metric' / f'candidates_{ma.replace("+", "_")}'; ps.save(fig, p); plt.close(fig)
     print('wrote', p)
 
 
@@ -112,7 +112,7 @@ def fig_concentration():
                  'its recovery is via locality (bulk pairs excluded), not via equalising concentration',
                  fontsize=10)
     fig.tight_layout(rect=[0, 0, 1, 0.88])
-    p = PLOTS / 'robust_concentration'; ps.save(fig, p); plt.close(fig)
+    p = PLOTS / 'spread_metric' / 'concentration'; ps.save(fig, p); plt.close(fig)
     print('wrote', p)
 
 

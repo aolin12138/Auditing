@@ -13,7 +13,7 @@ parquet cell or a viewed figure.
   rf} × structure {random, spatial} × frac {0.25…0.95} × tc {0, 2} × seeds (10 fast / 3 rf).
 - `defect_expansion_experiment/run_confound.py` — before-split vs train-only accuracy
   (overfit tree + white-box DTA, deterministic, 30 seeds).
-- `plot_p1.py` → `plots/imbalance_p1_{models,asymmetry,confound}.png`.
+- `plot_p1.py` → `plots/imbalance/p1_{models,asymmetry,confound}.png`.
 - `FINDINGS_imbalance_p1.md`.
 
 ## Runs (all logged)
@@ -64,7 +64,7 @@ origin/master.
 Re-ran imbalance-vs-coverage-gap on **wine (13-D)** as well as iris, factored by injection
 protocol (train-only vs before-split), standardized, tree+DTA (30 seeds) and **svm+HSJ (15
 seeds)**. Figures: `variance_{iris,wine}.png`, `variance_svm_{iris,wine}.png`,
-`variance_spread_summary.png` (fragility map).
+`spread_fragility_map.png` (fragility map).
 - **Recall discriminator is robust** across dataset AND model/attack (wine spatial recall
   0.48 vs random 0.90).
 - **Spread signal is fragile** to *both* dimensionality (iris 1.26× → wine ~1.04×) and attack

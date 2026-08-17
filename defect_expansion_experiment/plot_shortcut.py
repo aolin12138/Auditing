@@ -8,7 +8,7 @@ Answers: as the shortcut strengthens — does test accuracy collapse (Clever Han
 the tree lean on the shortcut (split depth -> root)? does the adversarial displacement
 concentrate on the spurious axis (H1)? how big are the escapes?
 
--> plots/shortcut.png  (PNG + vector PDF)
+-> plots/shortcut/phase0.png  (PNG + vector PDF)
 """
 import os
 for _v in ['OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS', 'NUMEXPR_NUM_THREADS']:
@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 import plotstyle as ps; ps.apply()
 
 HERE = Path(__file__).resolve().parent
-PLOTS = HERE / 'plots'; PLOTS.mkdir(exist_ok=True)
+PLOTS = HERE / 'plots'; PLOTS.mkdir(exist_ok=True); (PLOTS / 'shortcut').mkdir(exist_ok=True)
 CORR = [0.0, 0.5, 1.0, 2.0, 4.0, 8.0]
 X = np.arange(len(CORR))
 ROWS = [('vacc', 'test accuracy\n(Clever Hans cost)', (0.3, 1.0)),
@@ -65,7 +65,7 @@ def main():
                  'as the shortcut strengthens: test accuracy collapses, the first spurious split rises to the\n'
                  'root, and adversarial displacement concentrates on the spurious axis', fontsize=11.5)
     fig.tight_layout(rect=[0, 0, 1, 0.95])
-    p = PLOTS / 'shortcut'; ps.save(fig, p); plt.close(fig)
+    p = PLOTS / 'shortcut' / 'phase0'; ps.save(fig, p); plt.close(fig)
     print('wrote', p)
 
 

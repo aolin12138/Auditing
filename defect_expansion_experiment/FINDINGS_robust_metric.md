@@ -5,8 +5,8 @@ coverage-gap (spatial) vs imbalance (random) signal on 13-D wine** that raw OPTI
 spread lost, **while keeping the working 4-D iris case intact**.
 
 - Runner: `run_robust_metric.py` (metrics on persisted clouds) · clouds persisted by
-  `run_variance.py --save-clouds` · figs: `plots/robust_{tree+dta,svm+hsj}.png`,
-  `plots/robust_concentration.png` · data: `results_robust_metric.parquet`,
+  `run_variance.py --save-clouds` · figs: `plots/spread_metric/candidates_{tree_dta,svm_hsj}.png`,
+  `plots/spread_metric/concentration.png` · data: `results_robust_metric.parquet`,
   `results_robust_summary.csv`.
 
 ## 0. Same-clouds guarantee (criterion 3)

@@ -156,7 +156,7 @@ Three threads added after the report; full write-ups live in the experiment fold
 ## Finding 6 — Cross-dataset variance: the SPREAD signal is fragile, RECALL is robust (2026-08-16)
 
 `defect_expansion_experiment/` (`run_variance.py`, `run_confound.py`, `FINDINGS_variance.md`,
-`plots/variance_{iris,wine}.png`, `variance_svm_{iris,wine}.png`, `variance_spread_summary.png`).
+`plots/variance/tree_dta_{iris,wine}.png`, `svm_hsj_{iris,wine}.png`, `spread_fragility_map.png`).
 Re-ran the imbalance-vs-coverage-gap contrast on a **second dataset (wine, 13-D)** and a **second
 model+attack (svm + black-box HSJ)**, factored by injection **protocol** (train-only vs
 before-split), features standardized, 30 seeds (tree+DTA) / 15 (svm+HSJ).

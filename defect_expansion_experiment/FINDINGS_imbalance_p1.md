@@ -8,7 +8,7 @@ only (clean test), `feat=2` (petal length) for the spatial arm.
 - Data: `results_p1.parquet` (svm 210 rows, tree 210 rows; 10 seeds), `results_p1_rf.parquet`
   (rf 39 rows; 3 seeds — slow ~73 s/cell, 8 cells hung → NaN), `results_confound.parquet`
   (tree+DTA, 30 seeds, 660 rows).
-- Figs: `plots/imbalance_p1_models.png`, `imbalance_p1_asymmetry.png`, `imbalance_p1_confound.png`.
+- Figs: `plots/imbalance/p1_models.png`, `p1_asymmetry.png`, `p1_confound.png`.
 - All spreads are normalised to each model's own clean (frac=0) baseline; 95% CI = 1.96·σ/√n.
 
 Attacks/models: rbf-SVM + HSJ, single overfit tree + HSJ (black-box control), RandomForest

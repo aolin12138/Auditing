@@ -7,7 +7,7 @@ keeps the test set "clean" so the reliance is invisible to train accuracy. Sweep
 30 seeds, iris (4-D) + wine (13-D).
 
 - Runner: `run_shortcut.py` · data: `results_shortcut.parquet` (360 cells) · fig:
-  `plots/shortcut.png` · all numbers below are fold-mean ± 95% CI over 30 seeds.
+  `plots/shortcut/phase0.png` · all numbers below are fold-mean ± 95% CI over 30 seeds.
 
 ## 0. What we measure
 
@@ -84,7 +84,7 @@ same reliance, and no dose shows geometry firing at literally zero accuracy chan
 1. `spur_frac` CIs separate control from strongest corr, direction = rise — **MET both
    datasets** (F2).
 2. Manipulation check confirms reliance — **MET** (F1: spur_depth → root, vacc ↓).
-3. Dose curves plotted + per-dataset verdict — **MET** (plots/shortcut.png; F1–F4).
+3. Dose curves plotted + per-dataset verdict — **MET** (plots/shortcut/phase0.png; F1–F4).
 4. Plots numerically cross-checked against the parquet (all cells match); **visual check
    pending user** (no image rendering this session); commit pending.
 

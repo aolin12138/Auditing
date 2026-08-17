@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import plotstyle as ps; ps.apply()
 
 HERE = Path(__file__).resolve().parent
-PLOTS = HERE / 'plots'; PLOTS.mkdir(exist_ok=True)
+PLOTS = HERE / 'plots'; PLOTS.mkdir(exist_ok=True); (PLOTS / 'imbalance').mkdir(exist_ok=True)
 
 d_ft = pl.read_parquet(HERE / 'results_p1.parquet')                 # svm + tree
 d_rf = pl.read_parquet(HERE / 'results_p1_rf.parquet')             # rf
@@ -84,7 +84,7 @@ def fig_models():
                  'TOP: spatial (coverage gap) > random (imbalance) spread SURVIVES black-box HSJ + ensembling · '
                  'BOTTOM: minority recall is the clean discriminator', fontsize=11)
     fig.tight_layout(rect=[0, 0, 1, 0.94])
-    p = PLOTS / 'imbalance_p1_models'; ps.save(fig, p); plt.close(fig)
+    p = PLOTS / 'imbalance' / 'p1_models'; ps.save(fig, p); plt.close(fig)
     print('wrote', p)
 
 
@@ -115,7 +115,7 @@ def fig_asymmetry():
     ax.legend(fontsize=8, loc='lower left')
     fig.suptitle('Phase 1 — class asymmetry (rbf-SVM + HSJ, spatial deletion, train-only)', fontsize=11)
     fig.tight_layout(rect=[0, 0, 1, 0.92])
-    p = PLOTS / 'imbalance_p1_asymmetry'; ps.save(fig, p); plt.close(fig)
+    p = PLOTS / 'imbalance' / 'p1_asymmetry'; ps.save(fig, p); plt.close(fig)
     print('wrote', p)
 
 
@@ -157,7 +157,7 @@ def fig_confound():
                  'before-split injection makes accuracy RISE (deletes hard test cases); '
                  'train-only makes it DROP — a pure protocol artifact', fontsize=11)
     fig.tight_layout(rect=[0, 0, 1, 0.92])
-    p = PLOTS / 'imbalance_p1_confound'; ps.save(fig, p); plt.close(fig)
+    p = PLOTS / 'imbalance' / 'p1_confound'; ps.save(fig, p); plt.close(fig)
     print('wrote', p)
 
 
