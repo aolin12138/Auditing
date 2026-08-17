@@ -81,6 +81,24 @@ What *does* survive is the cheaper, model-agnostic **per-class recall** signal a
 dimension-robust spread measure (kNN-distance ratio, relative density vs clean data, or PCA-then-
 OPTICS) — see PLAN / open questions.
 
+## F4 — SVM + HSJ (black-box) replicates the mechanisms AND weakens the spread signal further
+
+Ran **svm + HopSkipJump** across both datasets (2×2 structure×protocol × frac × 15 seeds,
+`results_variance_svm.parquet`; `plots/variance_svm_{iris,wine}.png`,
+`plots/variance_spread_summary.png` fragility map).
+
+- **Recall discriminator replicates and is strong** (train-only, frac 0.9): spatial vs random
+  minority recall — iris 0.44 vs 0.67, **wine 0.48 vs 0.90** (gap 0.42). Robust across dataset
+  **and** model/attack.
+- **Spread signal weakens *further* under HSJ:** iris spatial only ~1.11× (vs 1.26× under white-box
+  DTA); wine flat ~1.0×. So the geometry-spread signal is fragile to **both** dimensionality
+  (dataset) **and** attack — black-box HSJ lands on the smooth SVM boundary surface and is less
+  geometry-sensitive than white-box DTA, which lands on discrete tree leaves. The fragility map
+  shows it at a glance: strong *only* on iris+tree/DTA (~1.25×), everything else ≈ 1.0×.
+- **Before-split composition artifact + accuracy confound both replicate** under SVM+HSJ.
+- **Conclusion.** Recall is the robust **cross-dataset AND cross-model** signal; the
+  spread/geometry signal clearly fires only for iris + white-box tree/DTA.
+
 ---
 
 # Mechanisms (observation → hypothesis → evidence → conclusion)
@@ -167,9 +185,9 @@ reproducible from the same seeds range(300,320), overfit tree + DTA, standardize
   panels are noisy/near-meaningless — another reason train-only is the correct protocol.
 
 ## Caveats
-- Model coverage: the cross-dataset variance study is **tree + white-box DTA only**. SVM + HSJ was
-  run on iris (train-only) in Phase 1 but not on wine / not in the before-split 2×2; RF + HSJ is
-  impractical cross-dataset (~73 s/cell + hangs). Global StandardScaler (mild leakage, acceptable
-  for this exploratory check).
+- Model coverage: cross-dataset variance now covers **tree + white-box DTA (30 seeds)** and
+  **SVM + black-box HSJ (15 seeds)** on iris + wine, both protocols (F4). RF + HSJ remains
+  impractical cross-dataset (~73 s/cell + hangs) — not run. Global StandardScaler (mild leakage,
+  acceptable for this exploratory check).
 - Two datasets only — wine is still low-dimensional by real-world standards; a >50-D set
   (digits, or a real tabular dataset) would test the spread collapse harder.

@@ -14,7 +14,7 @@ class = lowest baseline recall; spatial feature = most class-discriminative), do
 Reuses inject_delete (./run_imbalance.py, train-only) and cluster_stats (../outlier_experiment).
 Usage: python run_variance.py
 """
-import os
+import os, sys
 for _v in ['OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS', 'NUMEXPR_NUM_THREADS']:
     os.environ[_v] = '1'
 import warnings, time, importlib.util
@@ -24,13 +24,17 @@ import numpy as np, polars as pl
 warnings.filterwarnings('ignore')
 from sklearn.datasets import load_iris, load_wine
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from art.estimators.classification import SklearnClassifier
-from art.attacks.evasion import DecisionTreeAttack
+from art.attacks.evasion import DecisionTreeAttack, HopSkipJump
 
 HERE = Path(__file__).resolve().parent
-OUT = HERE / 'results_variance.parquet'
+# model+attack for this run: tree+DTA (default, deterministic) or svm+HSJ (black-box, global boundary)
+MODEL = 'svm' if '--model' in sys.argv and sys.argv[sys.argv.index('--model') + 1] == 'svm' else 'tree'
+ATTACK = 'hsj' if MODEL == 'svm' else 'dta'
+OUT = HERE / ('results_variance_svm.parquet' if MODEL == 'svm' else 'results_variance.parquet')
 _spec = importlib.util.spec_from_file_location('imb_lib', HERE / 'run_imbalance.py')
 _imb = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(_imb)
 inject_delete = _imb.inject_delete
@@ -68,6 +72,22 @@ def delete_full(X, y, tc, feat, frac, structure, rng):
     return X[keep], y[keep]
 
 
+def _fit(Xt, yt, yoh):
+    if MODEL == 'svm':
+        m = SVC(kernel='rbf', probability=True, random_state=42).fit(Xt, yt)
+        return SklearnClassifier(m)
+    m = DecisionTreeClassifier(max_depth=None, random_state=42).fit(Xt, yt)
+    art = SklearnClassifier(m); art.fit(Xt, yoh.transform(yt.reshape(-1, 1)))   # onehot-refit (proven tree pipeline)
+    return art
+
+
+def _attack(art, Xc, nfeat):
+    if MODEL == 'svm':
+        hs = HopSkipJump(classifier=art, norm=2, max_iter=10, max_eval=200, init_eval=50, verbose=False)
+        return hs.generate(Xc)
+    return DecisionTreeAttack(classifier=art).generate(Xc)
+
+
 def run_cell(dataset, structure, protocol, frac, seed):
     cfg = CFG[dataset]; tc, feat = cfg['tc'], cfg['feat']
     X, y = cfg['load'](return_X_y=True)
@@ -82,8 +102,7 @@ def run_cell(dataset, structure, protocol, frac, seed):
         Xt, Xv, yt, yv = X[tr], X[te], y[tr], y[te]
         if protocol == 'train_only' and frac > 0:
             Xt, yt = inject_delete(Xt, yt, tc, feat, frac, structure, rng)
-        m = DecisionTreeClassifier(max_depth=None, random_state=42).fit(Xt, yt)
-        art = SklearnClassifier(m); art.fit(Xt, yoh.transform(yt.reshape(-1, 1)))
+        art = _fit(Xt, yt, yoh)
         tacc = float((np.argmax(art.predict(Xt), axis=1) == yt).mean())
         pv = np.argmax(art.predict(Xv), axis=1)
         vacc = float((pv == yv).mean())
@@ -91,19 +110,28 @@ def run_cell(dataset, structure, protocol, frac, seed):
         min_recall = float((pv[mmask] == tc).mean()) if mmask.sum() else np.nan
         c = pv == yv
         if c.sum():
-            adv = DecisionTreeAttack(classifier=art).generate(Xv[c])
+            adv = _attack(art, Xv[c], X.shape[1])
             ap = np.argmax(art.predict(adv), axis=1); adv = adv[ap != yv[c]]
         else:
             adv = np.empty((0, X.shape[1]))
         md = cluster_stats(adv)[2] if len(adv) else np.nan
         folds.append(dict(tacc=tacc, vacc=vacc, min_recall=min_recall, nadv=len(adv), mean_dist=md))
     r = {k: float(np.nanmean([f[k] for f in folds])) for k in folds[0]}
-    r.update(dataset=dataset, model='tree', attack='dta', structure=structure, protocol=protocol,
+    r.update(dataset=dataset, model=MODEL, attack=ATTACK, structure=structure, protocol=protocol,
              tc=int(tc), feat=int(feat), frac=float(frac), seed=int(seed))
     return r
 
 
 def main():
+    global SEEDS
+    if '--smoke' in sys.argv:
+        for ds in CFG:
+            t0 = time.time(); r = run_cell(ds, 'spatial', 'train_only', 0.8, 42)
+            print(f'  smoke {MODEL}+{ATTACK} {ds}: {time.time()-t0:.1f}s vacc={r["vacc"]:.3f} '
+                  f'spread={r["mean_dist"]:.3f} recall={r["min_recall"]:.3f}', flush=True)
+        return
+    if '--nseeds' in sys.argv:
+        SEEDS = SEEDS[:int(sys.argv[sys.argv.index('--nseeds') + 1])]
     rows, t0 = [], time.time()
     grid = []
     for ds, seed in product(CFG, SEEDS):
@@ -113,8 +141,8 @@ def main():
     for i, (ds, s, p, f, sd) in enumerate(grid, 1):
         rows.append(run_cell(ds, s, p, f, sd))
         if i % 100 == 0 or i == len(grid):
-            print(f'  [{i}/{len(grid)}] {(time.time()-t0)/60:.1f}m', flush=True)
-    pl.DataFrame([{c: r.get(c, np.nan) for c in COLS} for r in rows]).write_parquet(OUT)
+            pl.DataFrame([{c: r.get(c, np.nan) for c in COLS} for r in rows]).write_parquet(OUT)  # checkpoint
+            print(f'  [{i}/{len(grid)}] {(time.time()-t0)/60:.1f}m (checkpointed {len(rows)} rows)', flush=True)
     print(f'DONE: {len(rows)} rows -> {OUT.name} in {(time.time()-t0)/60:.1f}m', flush=True)
 
 
