@@ -57,7 +57,17 @@ These are actionable on our existing `plot_*.py` without installing anything:
 - Standardize the "figure contract" (core conclusion → evidence hierarchy → prototype) already
   implicit in our titles; write it into each `plot_*.py` docstring.
 
-## Status
-- Reviewed + recommended 2026-08-16. **Not yet installed / applied.** Highest-value next actions:
-  (a) the colorblind palette + shared `plotstyle.py`, (b) vector export, (c) optionally install
-  `nature-figure` into `~/.pi/agent/skills/` for the report-figure pass. Await user go-ahead.
+## Status (updated 2026-08-16 — installed + applied)
+- **`nature-figure` + `nature-shared` INSTALLED** into `~/.pi/agent/skills/` (frontmatter dry-load
+  verified; run `/reload` in pi to load — no restart needed). Its QA scripts
+  (`validate_figure.py`, `audit_pdf_text.py`, `figure_safety.py`) are now available for the
+  report-figure pass.
+- **Visualization optimization DONE:** new `defect_expansion_experiment/plotstyle.py` (Okabe-Ito
+  colorblind-safe palette, series differentiated by colour **and** linestyle/marker, top/right
+  spines off, PNG+**vector PDF** export with editable text, panel-label helper). Retrofitted
+  `plot_imbalance.py`, `plot_p1.py`, `plot_variance.py` — red/green replaced by orange/blue,
+  panel labels (a–f) on multi-panel grids, all figures regenerated as `.png` + `.pdf`.
+- **Future plots:** `import plotstyle as ps; ps.apply()` then use `ps.DEFECT[...]`,
+  `ps.DEFECT_LS/MK`, `ps.panel_label(ax,'a')`, `ps.save(fig, path_stem)`.
+- Remaining optional: install writing/statistics/literature skills; apply `plotstyle` to the
+  older `outlier_experiment/` + `model_family_experiment/` plots if they go into the report.

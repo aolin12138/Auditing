@@ -16,6 +16,7 @@ from pathlib import Path
 import numpy as np, polars as pl
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import plotstyle as ps; ps.apply()
 
 HERE = Path(__file__).resolve().parent
 PLOTS = HERE / 'plots'; PLOTS.mkdir(exist_ok=True)
@@ -25,8 +26,8 @@ if _svm.exists():
     DFS['svm+HSJ'] = pl.read_parquet(_svm)
 D = DFS['tree+DTA']                                    # default for the per-dataset 3x2 figures
 FRAC = [0.0, 0.2, 0.4, 0.6, 0.8, 0.9]
-COL = {'random': '#2ca25f', 'spatial': '#c0392b'}
-LAB = {'random': 'random (imbalance)', 'spatial': 'spatial (coverage gap)'}
+COL = ps.DEFECT                       # colorblind-safe (Okabe-Ito): spatial=vermillion, random=blue
+LAB = ps.DEFECT_LAB
 DS_TITLE = {'iris': 'iris (4-D · tc=2 virginica · feat=petal width)',
             'wine': 'wine (13-D · tc=0 · feat=proline)'}
 
@@ -69,12 +70,13 @@ def fig_dataset(ds, df=None, ma='tree+DTA', suffix=''):
             ax = axes[i][j]
             for s in ['spatial', 'random']:
                 x, m, ci = series(ds, s, proto, col, norm=nrm)
-                ax.plot(x, m, marker='o', lw=2.2, color=COL[s], label=LAB[s])
+                ax.plot(x, m, marker=ps.DEFECT_MK[s], ls=ps.DEFECT_LS[s], color=COL[s], label=LAB[s])
                 ax.fill_between(x, m - ci, m + ci, color=COL[s], alpha=0.15)
             if col == 'mean_dist':
                 ax.axhline(1.0, ls=':', color='0.4', lw=1)
             if ylim:
                 ax.set_ylim(*ylim)
+            ps.panel_label(ax, 'abcdef'[i * 2 + j])
             if i == 0:
                 ax.set_title(ctitle[proto], fontsize=10)
             if j == 0:
@@ -87,14 +89,14 @@ def fig_dataset(ds, df=None, ma='tree+DTA', suffix=''):
                  'coverage gap (spatial) vs imbalance (random) · train-only vs before-split',
                  fontsize=12)
     fig.tight_layout(rect=[0, 0, 1, 0.95])
-    p = PLOTS / f'variance{suffix}_{ds}.png'; fig.savefig(p, dpi=135); plt.close(fig)
+    p = PLOTS / f'variance{suffix}_{ds}'; ps.save(fig, p); plt.close(fig)   # PNG + vector PDF
     print('wrote', p)
 
 
 def fig_summary():
     """Spatial normalised spread, train-only, across dataset x (model,attack) — the fragility map."""
     fig, ax = plt.subplots(figsize=(8.5, 5.2))
-    col = {'iris': '#b2182b', 'wine': '#2166ac'}
+    col = {'iris': ps.OKABE_ITO['blue'], 'wine': ps.OKABE_ITO['vermillion']}
     ls = {'tree+DTA': '-', 'svm+HSJ': '--'}
     for ma, df in DFS.items():
         for ds in ['iris', 'wine']:
@@ -109,7 +111,7 @@ def fig_summary():
                  '→ the geometry signal is fragile to BOTH dimensionality and attack', fontsize=9.5)
     ax.legend(fontsize=8, loc='upper left')
     fig.tight_layout()
-    p = PLOTS / 'variance_spread_summary.png'; fig.savefig(p, dpi=140); plt.close(fig)
+    p = PLOTS / 'variance_spread_summary'; ps.save(fig, p); plt.close(fig)   # PNG + vector PDF
     print('wrote', p)
 
 

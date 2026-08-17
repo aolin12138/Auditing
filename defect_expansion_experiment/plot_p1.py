@@ -14,6 +14,7 @@ from pathlib import Path
 import numpy as np, polars as pl
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import plotstyle as ps; ps.apply()
 
 HERE = Path(__file__).resolve().parent
 PLOTS = HERE / 'plots'; PLOTS.mkdir(exist_ok=True)
@@ -23,7 +24,7 @@ d_rf = pl.read_parquet(HERE / 'results_p1_rf.parquet')             # rf
 D = pl.concat([d_ft, d_rf])
 d_cf = pl.read_parquet(HERE / 'results_confound.parquet')
 
-COL = {'random': '#2ca25f', 'spatial': '#c0392b'}
+COL = ps.DEFECT                      # colorblind-safe (Okabe-Ito)
 LAB = {'random': 'random deletion (imbalance)', 'spatial': 'spatial deletion (coverage gap)'}
 MODEL_TITLE = {'svm': 'rbf-SVM + HSJ (black-box)', 'tree': 'overfit tree + HSJ (black-box)',
                'rf': 'RandomForest + HSJ (black-box)'}
@@ -62,7 +63,7 @@ def fig_models():
         ax = axes[0][j]
         for s in ['random', 'spatial']:
             x, m, ci = series(model, 2, s, 'mean_dist', fracs[model], norm_base=nb)
-            ax.plot(x, m, marker='o', lw=2.2, color=COL[s], label=LAB[s])
+            ax.plot(x, m, marker=ps.DEFECT_MK[s], ls=ps.DEFECT_LS[s], color=COL[s], label=LAB[s])
             ax.fill_between(x, m - ci, m + ci, color=COL[s], alpha=0.15)
         ax.axhline(1.0, ls=':', color='0.4', lw=1)
         ax.set_title(MODEL_TITLE[model], fontsize=10)
@@ -73,7 +74,7 @@ def fig_models():
         ax = axes[1][j]
         for s in ['random', 'spatial']:
             x, m, ci = series(model, 2, s, 'min_recall', fracs[model])
-            ax.plot(x, m, marker='o', lw=2.2, color=COL[s], label=LAB[s] + ' — recall')
+            ax.plot(x, m, marker=ps.DEFECT_MK[s], ls=ps.DEFECT_LS[s], color=COL[s], label=LAB[s] + ' — recall')
             ax.fill_between(x, m - ci, m + ci, color=COL[s], alpha=0.15)
         ax.set_ylim(0, 1.03); ax.set_xlabel('fraction of class 2 removed')
         if j == 0:
@@ -83,7 +84,7 @@ def fig_models():
                  'TOP: spatial (coverage gap) > random (imbalance) spread SURVIVES black-box HSJ + ensembling · '
                  'BOTTOM: minority recall is the clean discriminator', fontsize=11)
     fig.tight_layout(rect=[0, 0, 1, 0.94])
-    p = PLOTS / 'imbalance_p1_models.png'; fig.savefig(p, dpi=140); plt.close(fig)
+    p = PLOTS / 'imbalance_p1_models'; ps.save(fig, p); plt.close(fig)
     print('wrote', p)
 
 
@@ -114,7 +115,7 @@ def fig_asymmetry():
     ax.legend(fontsize=8, loc='lower left')
     fig.suptitle('Phase 1 — class asymmetry (rbf-SVM + HSJ, spatial deletion, train-only)', fontsize=11)
     fig.tight_layout(rect=[0, 0, 1, 0.92])
-    p = PLOTS / 'imbalance_p1_asymmetry.png'; fig.savefig(p, dpi=140); plt.close(fig)
+    p = PLOTS / 'imbalance_p1_asymmetry'; ps.save(fig, p); plt.close(fig)
     print('wrote', p)
 
 
@@ -156,7 +157,7 @@ def fig_confound():
                  'before-split injection makes accuracy RISE (deletes hard test cases); '
                  'train-only makes it DROP — a pure protocol artifact', fontsize=11)
     fig.tight_layout(rect=[0, 0, 1, 0.92])
-    p = PLOTS / 'imbalance_p1_confound.png'; fig.savefig(p, dpi=140); plt.close(fig)
+    p = PLOTS / 'imbalance_p1_confound'; ps.save(fig, p); plt.close(fig)
     print('wrote', p)
 
 

@@ -11,13 +11,14 @@ from pathlib import Path
 import numpy as np, polars as pl
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import plotstyle as ps; ps.apply()
 
 HERE = Path(__file__).resolve().parent
 PLOTS = HERE / 'plots'; PLOTS.mkdir(exist_ok=True)
 d = pl.read_parquet(HERE / 'results_imbalance.parquet')
 base = d.filter(pl.col('frac') == 0.0)['mean_dist'].drop_nans().mean()
 FRAC = [0.0, 0.25, 0.5, 0.7, 0.85, 0.95]
-COL = {'random': '#2ca25f', 'spatial': '#c0392b'}
+COL = ps.DEFECT                      # colorblind-safe (Okabe-Ito)
 LAB = {'random': 'random deletion (imbalance)', 'spatial': 'spatial deletion (coverage gap)'}
 
 
@@ -37,7 +38,7 @@ fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.7))
 ax = axes[0]
 for s in ['random', 'spatial']:
     x, m, ci = series(s, 'mean_dist', norm=True)
-    ax.plot(x, m, marker='o', lw=2.2, color=COL[s], label=LAB[s])
+    ax.plot(x, m, marker=ps.DEFECT_MK[s], ls=ps.DEFECT_LS[s], color=COL[s], label=LAB[s])
     ax.fill_between(x, m - ci, m + ci, color=COL[s], alpha=0.15)
 ax.axhline(1.0, ls=':', color='0.4', lw=1)
 ax.set_xlabel('fraction of class removed (matched count both arms)')
@@ -49,7 +50,7 @@ ax.legend(fontsize=8, loc='upper left')
 ax = axes[1]
 for s in ['random', 'spatial']:
     x, m, ci = series(s, 'min_recall')
-    ax.plot(x, m, marker='o', lw=2.2, color=COL[s], label=LAB[s] + ' — minority recall')
+    ax.plot(x, m, marker=ps.DEFECT_MK[s], ls=ps.DEFECT_LS[s], color=COL[s], label=LAB[s] + ' — minority recall')
     ax.fill_between(x, m - ci, m + ci, color=COL[s], alpha=0.15)
     xa, ma, _ = series(s, 'vacc')
     ax.plot(xa, ma, ls='--', marker='.', lw=1.4, color=COL[s], alpha=0.6, label=LAB[s] + ' — overall acc')
@@ -62,5 +63,5 @@ ax.legend(fontsize=7, loc='lower left')
 
 fig.suptitle('Phase 0 — class imbalance vs coverage gap (overfit tree + white-box DTA, 30 seeds)', fontsize=11)
 fig.tight_layout(rect=[0, 0, 1, 0.93])
-fig.savefig(PLOTS / 'imbalance_phase0.png', dpi=140)
-print('wrote', PLOTS / 'imbalance_phase0.png')
+ps.save(fig, PLOTS / 'imbalance_phase0')
+print('wrote', PLOTS / 'imbalance_phase0.png/.pdf')
