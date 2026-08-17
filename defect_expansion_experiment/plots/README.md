@@ -19,7 +19,7 @@ palette, spatial = vermillion solid, random = blue dashed, panel labels a–j).
 | `candidates_{tree_dta,svm_hsj}.png` | 5 metrics (m0 raw OPTICS, m1 kNN-ratio, m2b LOF, m3 PCA-spread, m4 kNN-local) × iris/wine, spatial vs random — the recovery test | `FINDINGS_robust_metric.md` | `plot_robust_metric.py` | `results_robust_metric.parquet` |
 | `concentration.png` | distance-concentration std/mean per metric per dataset (check c — only PCA equalises it) | `FINDINGS_robust_metric.md` | `plot_robust_metric.py` | `results_robust_summary.csv` |
 | **shortcut/** — Clever Hans / spurious feature | | | | |
-| `phase0.png` | tree+DTA, 4×2 grid: test acc / first-spurious-split depth / spurious-axis fraction of adv displacement / adv L2 size, vs shortcut strength corr | `FINDINGS_shortcut.md` | `plot_shortcut.py` | `results_shortcut.parquet` |
+| `phase0.png` | tree+DTA, 5×2 grid: test acc / first-spurious-split depth / spurious-axis fraction of adv displacement / adv L2 size / normalised scalar spread (m0+m4), vs shortcut strength corr | `FINDINGS_shortcut.md` | `plot_shortcut.py` | `results_shortcut.parquet` |
 
 Conventions: severity axis = fraction of the target class removed; "spatial" = coverage gap
 (contiguous band deletion), "random" = class imbalance (uniform deletion); normalised = ÷ the

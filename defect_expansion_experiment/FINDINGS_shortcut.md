@@ -84,9 +84,28 @@ same reliance, and no dose shows geometry firing at literally zero accuracy chan
 1. `spur_frac` CIs separate control from strongest corr, direction = rise — **MET both
    datasets** (F2).
 2. Manipulation check confirms reliance — **MET** (F1: spur_depth → root, vacc ↓).
-3. Dose curves plotted + per-dataset verdict — **MET** (plots/shortcut/phase0.png; F1–F4).
+3. Dose curves plotted + per-dataset verdict — **MET** (plots/shortcut/phase0.png; F1–F5, incl. the
+   previously-unplotted scalar-spread row).
 4. Plots numerically cross-checked against the parquet (all cells match); **visual check
    pending user** (no image rendering this session); commit pending.
+
+## F5 — Scalar adversarial spread responds only LATE and only on wine ⚠️ (was unplotted)
+
+The runner recorded the project's scalar spread (m0 raw OPTICS + m4 kNN-local, normalised ×
+clean baseline) but the original figure omitted it — now row i–j of `plots/shortcut/phase0.png`:
+
+| corr | iris m0 | iris m4 | wine m0 | wine m4 |
+|---|---|---|---|---|
+| 2 | 1.033±.033 | 1.022±.014 | 1.002±.016 | 1.020±.007 |
+| 4 | 1.052±.038 | 0.999±.017 | **1.114±.034** | **1.056±.010** |
+| 8 | 0.985±.032 | 0.978±.012 | **1.194±.040** | 0.962±.003 |
+
+Scalar spread is **null on iris** (≤5%, within noise) and fires on **wine only at extreme
+doses** (m0 +11–19% at corr≥4, where accuracy has already collapsed to 0.53/0.40). This is
+exactly why the per-axis fraction (`spur_frac`) is the right metric for this defect: the
+shortcut's geometry is *directional* (displacement along one axis), and the scalar spread —
+which averages over all axes — misses it until the effect is overwhelming, and on iris misses
+it entirely.
 
 ## 6. GO/NO-GO for Phase 1 (RF+HSJ, SVM+HSJ)
 
