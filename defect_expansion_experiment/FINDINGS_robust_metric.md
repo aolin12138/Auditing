@@ -108,20 +108,27 @@ Two distinct recovery mechanisms, both real:
 
 ## 5. Verdict against success criteria
 
-1. **≥1 candidate with wine separation at frac ≥ 0.7 AND iris intact — MET.**
-   **M4 kNN-local spread** (k = min(5, n//4)): wine 1.055 vs 1.012 (0.8) and 1.078 vs 1.032
-   (0.9), iris 1.177/1.198 vs 1.074/1.112 — clean CIs, no parameters to tune.
-   **M3 PCA-then-spread** (m = 3): passes at frac 0.9 on both datasets.
-2. Honest-negative branch not needed.
+1. **Criterion 1 (letter): MET** — M4 kNN-local spread gives clean CI separation on wine at
+   0.8/0.9 with iris intact; M3 passes at 0.9. **Substantively: the honest-negative branch
+   (criterion 2) is the real conclusion.** The wine effect is a +4% ripple on a clean baseline
+   already as large as the defect arms (iris contrast +9.8% on a small baseline). No candidate
+   recovered a *geometrically meaningful* signal on wine — M4 only made the existing ripple
+   statistically clean. **The adversarial-geometry spread signal is genuinely
+   dimension-limited; per-class recall remains the recommended diagnostic.**
+2. **What the gate did establish (negative results):** (i) ratio-based metrics are provably
+   dead — the stretch is uniform inflation, so relative isolation is invariant (M1/M2b null
+   even on iris); (ii) fixing the statistic's concentration (M3, 0.56→0.82) does not enlarge
+   the effect — wine's clean cloud is simply already dispersed; (iii) raw LOF is numerically
+   unstable on white-box clouds (near-duplicate adv points).
 3. **Same-clouds guarantee — MET** (§0: 1260/1260 identical for tree; svm reproduced
    documented numbers to 3 decimals).
 4. Plots generated + numerically cross-checked against the summary CSV (all cells match);
    **visual check pending user** (current session has no image rendering).
 
-**Recommendation going forward:** replace raw OPTICS mean-pairwise spread with **M4 kNN-local
-spread** in future defect experiments (it is strictly better: same iris behaviour, wine
-recovered, near-zero added complexity). Recall stays the most robust cross-dataset/cross-model
-discriminator overall. Under black-box HSJ use **m3** for wine (only separator there).
+**Recommendation going forward (downgraded):** do **not** treat M4 as a dimension-robust
+replacement for raw spread — on wine it detects the ripple, not the defect. If a spread
+statistic is needed for white-box tree/iris-like analyses, M4 is marginally cleaner than raw
+OPTICS spread. **Recall stays the only robust cross-dataset/cross-model discriminator.**
 
 ## 6. Limitations / debt
 

@@ -82,9 +82,11 @@ adversarial-geometry probe iff it imposes a **global, structured** boundary dist
   `plots/imbalance_p1_{models,asymmetry,confound}.png`.
 - 2026-08-17: **§8 dimension-robust spread metric DONE** (`FINDINGS_robust_metric.md`; same-clouds
   guarantee verified — tree re-run 1260/1260 cells identical, svm re-run reproduces documented
-  numbers to 3 decimals) — **M4 kNN-local spread wins** (wine 1.055 vs 1.012 @0.8, iris intact,
-  clean CIs); M3 PCA-then-spread passes @0.9 (concentration equalised 0.56→0.82); M1/M2b ratio
-  metrics null (uniform stretch → ratio-invariant); raw LOF numerically unstable on white-box
-  clouds. Next gate: **Phase 0 shortcut / spurious feature** (PLAN §3).
+  numbers to 3 decimals) — **substantive verdict = honest-negative: the spread signal is
+  genuinely dimension-limited; recall is the recommended diagnostic.** Best candidate (kNN-local
+  spread) = +4% ripple on wine with clean CIs (baseline already as large as defect arms); ratio
+  metrics provably null (uniform stretch); PCA equalises concentration (0.56→0.82) without
+  enlarging the effect; raw LOF numerically unstable. Next gate: **Phase 0 shortcut / spurious
+  feature** (PLAN §3).
 - Deferred/open: XGBoost per-point-timeout rework; 2-feature boundary visualisation of the
   `toward` tendril; structured (boundary-localized) label noise.

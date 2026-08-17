@@ -53,9 +53,12 @@ headline result.
   combinations.
 - **The spread metric itself is dimension- and attack-fragile** (2026-08-16, Finding 6): trust it
   only for iris + white-box DTA; on wine / under HSJ it goes flat. Prefer **recall** cross-dataset.
-  → **PARTIALLY RESOLVED (2026-08-17, §8):** use **kNN-local spread (M4)** instead of raw OPTICS
-  spread — it recovers wine (1.055 vs 1.012 @0.8) and keeps iris; PCA-then-spread (M3) also works
-  @0.9. Black-box HSJ recovery is partial (M3 wine @0.9; M4 direction-flipped). Recall still king.
+  → **RESOLVED AS NEGATIVE (2026-08-17, §8):** four dimension-robust candidates tested on the
+  same clouds — **none recovers a meaningful wine signal.** Best case (kNN-local spread) is a
+  +4% ripple with clean CIs on a clean baseline already as large as the defect arms; ratio
+  metrics provably null (uniform stretch); PCA fixes concentration (0.56→0.82) but not the
+  effect. Conclusion: spread is **genuinely dimension-limited**; **recall is the recommended
+  diagnostic**. Spread usable only for white-box iris-like cases.
 - **before-split is the wrong protocol** for both accuracy and the geometry metric — always
   train-only with a clean test (`06-lessons-gotchas.md`).
 - **Benchmark against existing bias detection.** Aiden's notes mention Katerina

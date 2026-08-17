@@ -182,15 +182,16 @@ before-split), features standardized, 30 seeds (tree+DTA) / 15 (svm+HSJ).
 the adversarial-**geometry/spread** signal only clearly fires for iris + white-box tree/DTA and
 needs a dimension-robust metric to generalize.
 
-**RESOLUTION (2026-08-17, `FINDINGS_robust_metric.md`):** §8 found the dimension-robust
-replacement — **kNN-graph local spread** (M4: mean distance to the k nearest neighbours,
-bulk far-pairs excluded) recovers the spatial-vs-random signal on wine (1.055 vs 1.012 @0.8,
-1.078 vs 1.032 @0.9, clean CIs) while keeping iris intact; **PCA-then-spread** (M3: OPTICS
-spread in the top-3 PC subspace) also passes @0.9 and equalises distance concentration
-(0.56→0.82). Ratio metrics (kNN-ratio, LOF) are null — the coverage-gap stretch is ~uniform
-inflation, so ratios are invariant; raw LOF is numerically unstable on white-box tree clouds
-(near-duplicate adv points → exploding LOF). **Use M4 as the spread metric going forward;**
-recall remains the overall robust discriminator.
+**RESOLUTION (2026-08-17, `FINDINGS_robust_metric.md`):** §8 tested 4+1 dimension-robust
+candidates on the same clouds. **Substantive verdict = the honest-negative: the spread
+signal is genuinely dimension-limited; recall is the recommended diagnostic.** The best
+candidate (kNN-local spread, M4) gives clean wine CIs (1.055 vs 1.012 @0.8) but only a **+4%
+ripple** on a clean baseline already as large as the defect arms (iris contrast +9.8% on a
+small baseline) — detectability of the ripple, not survival of a meaningful signal. Ratio
+metrics (kNN-ratio, LOF) are provably null (uniform stretch → ratios invariant);
+PCA-then-spread equalises concentration (0.56→0.82) without enlarging the effect; raw LOF is
+numerically unstable on white-box clouds. M4 = marginal upgrade for white-box iris-like
+cases only.
 
 ## Metric decomposition note
 
