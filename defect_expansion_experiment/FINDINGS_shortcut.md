@@ -107,13 +107,43 @@ shortcut's geometry is *directional* (displacement along one axis), and the scal
 which averages over all axes — misses it until the effect is overwhelming, and on iris misses
 it entirely.
 
-## 6. GO/NO-GO for Phase 1 (RF+HSJ, SVM+HSJ)
+## F6 — Phase 1 svm + black-box HSJ: the per-axis signal SURVIVES the attack (15 seeds) ✅
 
-**GO, with caveats to carry into Phase 1:** (i) the signature co-moves with accuracy — do
-not expect a zero-cost detector; (ii) wine's intermediate-corr dilution — expect weak
-absolute effects unless the shortcut is extreme; (iii) white-box only so far — HSJ on smooth
-SVM/RF boundaries may not show per-axis concentration at all (test per-axis displacement on
-the same adversarial clouds, and expect the tree+HSJ combination to be weak as always).
+`results_shortcut_svm.parquet` · `plots/shortcut/svm_hsj.png` (rows: accuracy / spur_frac / adv_l2 / spread).
+
+| corr | iris vacc | iris spur_frac | wine vacc | wine spur_frac |
+|---|---|---|---|---|
+| 0 (control) | 0.952±.007 | 0.015±.002 | 0.981±.002 | 0.024±.003 |
+| 2 | 0.845±.010 | **0.127±.010** | 0.920±.009 | **0.226±.010** |
+| 4 | 0.578±.019 | **0.354±.019** | 0.611±.014 | **0.455±.009** |
+| 8 | 0.334±.001 | 0.230±.125 ↓ | 0.400±.001 | 0.365±.031 ↓ |
+
+- **H1 SURVIVES the black-box attack:** monotone rise, separated from control by corr=2 on
+  both datasets, peak at corr=4 (iris 24× control, wine 19×), then a **survivorship dip** at
+  corr=8 (accuracy collapsed → tiny attacked set → noisy). The HSJ baseline is near-zero
+  (0.015–0.024) vs the tree's 0.108 — smooth-boundary escapes are real-axis-dominated at
+  control, so the shortcut's rise is even sharper in relative terms.
+- **Model-type flip:** wine now *leads* (0.455 vs 0.354 at corr=4), opposite of tree+DTA
+  (iris 0.321 vs wine 0.197). Mechanism: the overfit tree exploits iris's nearly-separable
+  real structure, so the shortcut competes; the smooth rbf-SVM leans on the shortcut's global
+  axis, and wine's messier real structure makes the shortcut relatively more attractive.
+- **"Cheap escape" exists here (partially):** wine adv_l2 *dips* at moderate corr
+  (2.23 → 2.00 at corr=2) before exploding at extreme doses (6.17 at corr=8) — the minimal
+  boundary crossing goes along the shortcut direction cheaply, on the smooth model only.
+- **Scalar spread fires earlier than on the tree but still only after the collapse:** m0
+  iris 1.22× at corr=4 (null on the tree arm!), wine 1.10×/1.54× at corr≥4 — but vacc is
+  already 0.58/0.61 there. m4 kNN-local flattens or drops at extreme doses (clumping).
+  Same conclusion as F5: scalar spread = late byproduct; per-axis fraction = early signature.
+
+## 6. GO/NO-GO status
+
+Phase 1 svm+HSJ arm **DONE (F6): GO confirmed** — the per-axis signature survives the
+black-box attack, with a model-type flip (wine now leads) and the same accuracy co-movement.
+**RF+HSJ arm remains deferred** (hang-prone ensembles, per the model-family lessons; the
+svm+HSJ answer already covers the black-box question, and RF was the weakest outlier model).
+Carried caveats resolved or confirmed: (i) confirmed — no zero-cost detector; (ii) partially
+resolved — under HSJ wine's dilution disappears (smooth model leans on the global axis);
+(iii) resolved — HSJ *does* show per-axis concentration (peak corr=4).
 
 ## 7. Limitations / debt
 
@@ -125,3 +155,5 @@ the same adversarial clouds, and expect the tree+HSJ combination to be weak as a
   survivors only.
 - z-encoding `{−1,0,+1}` assumes ordinal class distances; a one-hot multi-axis shortcut is a
   natural variant, untested.
+- svm+HSJ at 15 seeds; the corr=8 survivorship dip has wide CIs (tiny attacked set);
+  RF+HSJ not run (deferred).

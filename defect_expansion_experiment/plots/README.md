@@ -20,6 +20,7 @@ palette, spatial = vermillion solid, random = blue dashed, panel labels a–j).
 | `concentration.png` | distance-concentration std/mean per metric per dataset (check c — only PCA equalises it) | `FINDINGS_robust_metric.md` | `plot_robust_metric.py` | `results_robust_summary.csv` |
 | **shortcut/** — Clever Hans / spurious feature | | | | |
 | `phase0.png` | tree+DTA, 5×2 grid: test acc / first-spurious-split depth / spurious-axis fraction of adv displacement / adv L2 size / normalised scalar spread (m0+m4), vs shortcut strength corr | `FINDINGS_shortcut.md` | `plot_shortcut.py` | `results_shortcut.parquet` |
+| `svm_hsj.png` | svm+black-box HSJ, 4×2 grid: test acc / spurious-axis fraction of adv displacement / adv L2 / normalised scalar spread — the per-axis signal survives the black-box attack | `FINDINGS_shortcut.md` | `plot_shortcut.py` | `results_shortcut_svm.parquet` |
 
 Conventions: severity axis = fraction of the target class removed; "spatial" = coverage gap
 (contiguous band deletion), "random" = class imbalance (uniform deletion); normalised = ÷ the

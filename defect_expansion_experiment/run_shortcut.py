@@ -15,8 +15,8 @@ Per cell (fold-mean) we record:
                          with corr; control ~1/(d+1) by axis symmetry)
   spread_m0, spread_m4   scalar adversarial spread (raw OPTICS + kNN-local from §8)
 
--> results_shortcut.parquet   (one row per dataset x corr x seed)
-Usage: python run_shortcut.py [--smoke]
+-> results_shortcut.parquet  (tree)  /  results_shortcut_svm.parquet  (svm, via --model svm)
+Usage: python run_shortcut.py [--model svm] [--nseeds N] [--smoke]
 """
 import os
 for _v in ['OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS', 'NUMEXPR_NUM_THREADS']:
@@ -28,13 +28,16 @@ from itertools import product
 import numpy as np, polars as pl
 from sklearn.datasets import load_iris, load_wine
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from art.estimators.classification import SklearnClassifier
-from art.attacks.evasion import DecisionTreeAttack
+from art.attacks.evasion import DecisionTreeAttack, HopSkipJump
 
 HERE = Path(__file__).resolve().parent
-OUT = HERE / 'results_shortcut.parquet'
+MODEL = 'svm' if ('--model' in sys.argv and sys.argv[sys.argv.index('--model') + 1] == 'svm') else 'tree'
+ATTACK = 'hsj' if MODEL == 'svm' else 'dta'
+OUT = HERE / ('results_shortcut_svm.parquet' if MODEL == 'svm' else 'results_shortcut.parquet')
 CFG = {'iris': dict(load=load_iris, tc=2, title='iris (4-D)'),
        'wine': dict(load=load_wine, tc=0, title='wine (13-D)')}
 CORR = [0.0, 0.5, 1.0, 2.0, 4.0, 8.0]
@@ -52,6 +55,22 @@ _r = importlib.util.module_from_spec(_rm); _rm.loader.exec_module(_r)
 m4_knn_local = _r.m4_knn_local
 
 
+def _fit(Xt, yt, yoh):
+    if MODEL == 'svm':
+        m = SVC(kernel='rbf', probability=True, random_state=42).fit(Xt, yt)
+        return SklearnClassifier(m)
+    m = DecisionTreeClassifier(max_depth=None, random_state=42).fit(Xt, yt)
+    art = SklearnClassifier(m); art.fit(Xt, yoh.transform(yt.reshape(-1, 1)))   # onehot-refit (proven tree pipeline)
+    return art
+
+
+def _attack(art, x0):
+    if MODEL == 'svm':
+        hs = HopSkipJump(classifier=art, norm=2, max_iter=10, max_eval=200, init_eval=50, verbose=False)
+        return hs.generate(x0)
+    return DecisionTreeAttack(classifier=art).generate(x0)
+
+
 def run_cell(dataset, corr, seed):
     X, y = CFG[dataset]['load'](return_X_y=True)
     X = StandardScaler().fit_transform(X)                 # standardize REAL features only
@@ -67,27 +86,34 @@ def run_cell(dataset, corr, seed):
         Xt = np.column_stack([X[tr], corr * z[tr] + noise_tr])   # train: signal + noise
         Xv = np.column_stack([X[te], noise_te])                  # test: pure noise
         yt, yv = y[tr], y[te]
-        m = DecisionTreeClassifier(max_depth=None, random_state=42).fit(Xt, yt)
-        art = SklearnClassifier(m); art.fit(Xt, yoh.transform(yt.reshape(-1, 1)))
+        if MODEL == 'svm':
+            m0 = None
+            art = _fit(Xt, yt, yoh)
+        else:
+            m0 = DecisionTreeClassifier(max_depth=None, random_state=42).fit(Xt, yt)
+            art = _fit(Xt, yt, yoh)
         tacc = float((np.argmax(art.predict(Xt), axis=1) == yt).mean())
         pv = np.argmax(art.predict(Xv), axis=1)
         vacc = float((pv == yv).mean())
-        nsp = int((m.tree_.feature == spur).sum())        # manipulation check
-        spur_depth = np.nan
-        if nsp:
-            dep = np.zeros(m.tree_.node_count, dtype=int)
-            stack = [(0, 0)]
-            while stack:
-                n, d = stack.pop()
-                dep[n] = d
-                if m.tree_.children_left[n] != -1:
-                    stack.append((m.tree_.children_left[n], d + 1))
-                    stack.append((m.tree_.children_right[n], d + 1))
-            spur_depth = float(dep[m.tree_.feature == spur].min())   # depth of FIRST spurious split (root=0)
+        if MODEL == 'svm':
+            nsp = np.nan; spur_depth = np.nan
+        else:
+            nsp = int((m0.tree_.feature == spur).sum())        # manipulation check
+            spur_depth = np.nan
+            if nsp:
+                dep = np.zeros(m0.tree_.node_count, dtype=int)
+                stack = [(0, 0)]
+                while stack:
+                    n, d = stack.pop()
+                    dep[n] = d
+                    if m0.tree_.children_left[n] != -1:
+                        stack.append((m0.tree_.children_left[n], d + 1))
+                        stack.append((m0.tree_.children_right[n], d + 1))
+                spur_depth = float(dep[m0.tree_.feature == spur].min())   # depth of FIRST spurious split (root=0)
         c = pv == yv
         if c.sum():
             x0 = Xv[c]
-            adv = DecisionTreeAttack(classifier=art).generate(x0)
+            adv = _attack(art, x0)
             ap = np.argmax(art.predict(adv), axis=1)
             flip = ap != yv[c]
             adv = adv[flip]; x0 = x0[flip]
@@ -112,6 +138,9 @@ def run_cell(dataset, corr, seed):
 
 
 def main():
+    global SEEDS
+    if '--nseeds' in sys.argv:
+        SEEDS = SEEDS[:int(sys.argv[sys.argv.index('--nseeds') + 1])]
     if '--smoke' in sys.argv:
         for ds in CFG:
             t0 = time.time(); r = run_cell(ds, 2.0, 42)

@@ -93,7 +93,12 @@ adversarial-geometry probe iff it imposes a **global, structured** boundary dist
   monotonically, 0.11→0.50 iris / 0.00→1.00 wine, tight CIs — the first geometry signal to fire
   on wine at all); first spurious split rises to the root (reliance manipulation check);
   cheap-escape prediction REFUTED (adv_l2 grows with corr — thresholds recede); geometry
-  separates before the accuracy collapse completes but never at zero accuracy cost. Phase 1
-  (RF/SVM+HSJ) next, with caveats (FINDINGS §6).
+  separates before the accuracy collapse completes but never at zero accuracy cost.
+- 2026-08-17: **Thread C Phase 1 shortcut svm+HSJ DONE** (`results_shortcut_svm.parquet`,
+  `plots/shortcut/svm_hsj.png`) — **per-axis signal SURVIVES the black-box attack**: monotone,
+  separated from control by corr=2, peak corr=4 (iris 0.354 / wine 0.455 — wine now leads,
+  model-type flip vs the tree), survivorship dip at corr=8; cheap escape partially reappears on
+  wine (adv_l2 dips at moderate corr); scalar spread still a late byproduct (fires only after
+  acc collapse). RF+HSJ deferred (hang-prone).
 - Deferred/open: XGBoost per-point-timeout rework; 2-feature boundary visualisation of the
   `toward` tendril; structured (boundary-localized) label noise.
