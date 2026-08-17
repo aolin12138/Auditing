@@ -81,8 +81,95 @@ What *does* survive is the cheaper, model-agnostic **per-class recall** signal a
 dimension-robust spread measure (kNN-distance ratio, relative density vs clean data, or PCA-then-
 OPTICS) — see PLAN / open questions.
 
+---
+
+# Mechanisms (observation → hypothesis → evidence → conclusion)
+
+Each mechanism was measured, not reasoned by analogy (probe scripts run ad-hoc; numbers below
+reproducible from the same seeds range(300,320), overfit tree + DTA, standardized features).
+
+## M1 — Why random imbalance moves the spread far less than coverage gap (train-only)
+
+- **Observation.** Under train-only injection, spatial (coverage gap) raises adversarial spread
+  much more than random (imbalance): iris 1.26× vs 1.12×; wine 1.04× vs 1.00× (frac 0.9).
+- **Hypothesis.** Random deletion keeps the class's spatial extent (only thins density) → the
+  decision boundary stays put → adversarial points land in the same leaves → spread unchanged.
+  Spatial deletion removes a contiguous band → the boundary must extrapolate across the gap →
+  adversarial points relocate to farther leaves → spread rises.
+- **Evidence FOR.** At frac 0.9 on iris the tree loses the *same* number of leaves for both arms
+  (−4.6) yet only spatial moves the spread → it is *where* the boundary shifts (directional), not
+  how much. The deleted class's own adversarial spread rises more under spatial than random.
+- **Evidence AGAINST "pure density".** At extreme severity (90%) random *also* coarsens the
+  boundary somewhat: the tc-class adversarial spread rises +25% (iris) / +7% (wine) and leaves
+  drop −4.2 (iris). So random is "mostly density thinning **plus** mild boundary coarsening at the
+  extreme," not strictly density-only.
+- **Conclusion.** Coverage gap = a *directional, structured* boundary distortion (strong signal);
+  random imbalance = density thinning that only coarsens the boundary mildly at high severity.
+  Confirmed — with the refinement that at 90% deletion random is not perfectly geometry-preserving.
+
+## M2 — Why before-split makes BOTH arms move the spread identically (a composition artifact)
+
+- **Observation.** Under before-split injection, random and coverage-gap give the *same* spread
+  (wine ~2.9 both; iris both rise together), unlike train-only where they separate.
+- **Hypothesis A (composition).** Before-split removes the target class from the *test* set
+  equally for both arms → tc adversarial examples drop out of the cloud → the surviving c1/c2 cloud
+  is identical → same spread; the rise vs baseline is because the dropped tc cluster was tight.
+- **Hypothesis B (boundary).** With tc nearly gone from *training*, the surviving c1/c2 points
+  land differently → they themselves spread out.
+- **Evidence FOR A, AGAINST B** (wine, frac 0.9, decomposition): tc points in the test fold drop
+  11.8 → 1.2 (identical both arms); tc adversarial examples drop 8 → 0.8; c1/c2 counts are
+  identical across arms (13.2 / 8.7). Baseline **c1+c2-only** spread = 2.899 ≈ before-split full
+  spread 2.917. The **c1 and c2 individual spreads stay flat** across every condition
+  (c1 3.48→3.50, c2 3.12→3.19) → the surviving boundary did **not** change. So it is pure
+  composition (A); B is refuted.
+- **Conclusion.** The before-split spread change is a **test-set composition artifact**: deleting
+  the tight tc cluster from the test cloud raises the mean, identically for both arms (same tc
+  count removed), and reflects nothing about the defect's boundary effect. It is the
+  geometry-sibling of the accuracy confound. **Train-only is the correct protocol.**
+
+## M3 — Why the spread signal is dataset-fragile (iris strong, wine flat): dimensionality
+
+- **Observation.** Spatial spread reaches 1.26× on iris but only 1.04× on wine; random rises to
+  1.12× on iris but stays flat (1.00×) on wine.
+- **Hypothesis.** Dimensionality (13-D wine) weakens the geometry signal, via (a) a boundary more
+  robust to deletion and (b) distance concentration numbing the mean-pairwise-distance metric.
+  Rival hypothesis: it is class *overlap*, not dimensionality.
+- **Evidence FOR dimensionality.** Adversarial-distance concentration (std/mean) = 0.54 (iris) vs
+  0.29 (wine) — high-D concentrates distances. Boundary coarsening under random deletion: −4.2
+  leaves (iris) vs −2.0 (wine). tc-class spread rise: +25% (iris) vs +7% (wine). Full-cloud
+  dilution: wine's +7% tc rise shows as only +2% in the full cloud (numb metric). DTA displacement
+  carried by ~2.4/4 axes on iris (60% of the space) vs 2.8/13 on wine (22%).
+- **Evidence on overlap (secondary).** Both target classes are contested (iris virginica baseline
+  recall 0.92; wine class-0 0.88) and a *separable* class (iris setosa) gives a null signal — so
+  overlap *enables* any signal but is equal-ish across the two target classes, so it does not
+  explain the iris→wine difference.
+- **Conclusion.** The spread signal's fragility is **primarily dimensionality** (robust boundary +
+  numb metric), not overlap. Overlap is necessary for any signal but not the cause of wine's
+  flatness. Implication: the geometry/spread diagnostic needs a **dimension-robust** metric to
+  generalize; the recall discriminator (distance-free) is the robust cross-dataset signal.
+
+## M4 — How minority recall is computed, and why (method note)
+
+- **Definition.** `min_recall` = recall of the depleted **target class** `tc` on the *clean
+  held-out test fold* = (#test points truly `tc` predicted `tc`) / (#test points truly `tc`) =
+  TP / (TP + FN). Code (`run_variance.py:90`, `run_imbalance.py:79`):
+  `mmask = yv == tc; min_recall = (pv[mmask] == tc).mean()`. Computed per fold, averaged over 5
+  folds then over seeds; NaN if a fold has no `tc` test points.
+- **Naming caveat.** `min_recall` means **minority-class recall** (recall of `tc`), **not** the
+  minimum recall across classes. `run_p1.py` additionally stores `recall_c0/c1/c2`.
+- **Why recall, why per-class.** (1) It **isolates the damaged class** — overall accuracy averages
+  all 3 classes so depleting one barely moves it (the other ⅔ of the test set is fine), hiding the
+  harm. (2) **Recall, not precision** — the defect makes the model *under-predict* `tc`, so its
+  true instances become false negatives (recall↓); precision is far less affected. (3) It is
+  **distance-free**, so unlike spread it does not degrade with dimensionality — which is why it
+  stayed the robust discriminator from iris → wine.
+- **Caveat.** Under **before-split**, recall is measured on only ~1.2 tc test points (M2), so those
+  panels are noisy/near-meaningless — another reason train-only is the correct protocol.
+
 ## Caveats
-- One model+attack (tree+DTA) so far; SVM+HSJ / RF+HSJ cross-dataset not yet run (cheap for SVM,
-  slow for RF). Global StandardScaler (mild leakage, acceptable for this exploratory check).
+- Model coverage: the cross-dataset variance study is **tree + white-box DTA only**. SVM + HSJ was
+  run on iris (train-only) in Phase 1 but not on wine / not in the before-split 2×2; RF + HSJ is
+  impractical cross-dataset (~73 s/cell + hangs). Global StandardScaler (mild leakage, acceptable
+  for this exploratory check).
 - Two datasets only — wine is still low-dimensional by real-world standards; a >50-D set
   (digits, or a real tabular dataset) would test the spread collapse harder.
