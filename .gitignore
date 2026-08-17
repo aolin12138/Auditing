@@ -35,3 +35,7 @@ extend.log
 **/*_pid.txt
 **/run_*.log
 **/run_*.err
+
+# regenerable experiment artifacts (clouds: ~3m tree deterministic / svm stochastic re-run)
+**/clouds/
+**/*.prev.parquet

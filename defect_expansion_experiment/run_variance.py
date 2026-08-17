@@ -35,6 +35,8 @@ HERE = Path(__file__).resolve().parent
 MODEL = 'svm' if '--model' in sys.argv and sys.argv[sys.argv.index('--model') + 1] == 'svm' else 'tree'
 ATTACK = 'hsj' if MODEL == 'svm' else 'dta'
 OUT = HERE / ('results_variance_svm.parquet' if MODEL == 'svm' else 'results_variance.parquet')
+SAVE_CLOUDS = '--save-clouds' in sys.argv
+CLOUDS = HERE / 'clouds' / f'{MODEL}+{ATTACK}'
 _spec = importlib.util.spec_from_file_location('imb_lib', HERE / 'run_imbalance.py')
 _imb = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(_imb)
 inject_delete = _imb.inject_delete
@@ -97,7 +99,7 @@ def run_cell(dataset, structure, protocol, frac, seed):
     if protocol == 'before_split' and frac > 0:
         X, y = delete_full(X, y, tc, feat, frac, structure, rng)
     skf = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=seed)
-    folds = []
+    folds, clouds = [], []
     for tr, te in skf.split(X, y):
         Xt, Xv, yt, yv = X[tr], X[te], y[tr], y[te]
         if protocol == 'train_only' and frac > 0:
@@ -112,10 +114,20 @@ def run_cell(dataset, structure, protocol, frac, seed):
         if c.sum():
             adv = _attack(art, Xv[c], X.shape[1])
             ap = np.argmax(art.predict(adv), axis=1); adv = adv[ap != yv[c]]
+            cls = yv[c][ap != yv[c]]
         else:
             adv = np.empty((0, X.shape[1]))
+            cls = np.empty(0, dtype=y.dtype)
+        if SAVE_CLOUDS:
+            clouds.append((adv, cls))
         md = cluster_stats(adv)[2] if len(adv) else np.nan
         folds.append(dict(tacc=tacc, vacc=vacc, min_recall=min_recall, nadv=len(adv), mean_dist=md))
+    if SAVE_CLOUDS:
+        d = CLOUDS / dataset / structure / protocol
+        d.mkdir(parents=True, exist_ok=True)
+        np.savez(d / f'frac{frac:.1f}_seed{seed}.npz',
+                 **{f'adv{i}': a for i, (a, _) in enumerate(clouds)},
+                 **{f'cls{i}': c for i, (_, c) in enumerate(clouds)})
     r = {k: float(np.nanmean([f[k] for f in folds])) for k in folds[0]}
     r.update(dataset=dataset, model=MODEL, attack=ATTACK, structure=structure, protocol=protocol,
              tc=int(tc), feat=int(feat), frac=float(frac), seed=int(seed))

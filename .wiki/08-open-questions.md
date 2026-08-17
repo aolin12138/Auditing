@@ -53,6 +53,9 @@ headline result.
   combinations.
 - **The spread metric itself is dimension- and attack-fragile** (2026-08-16, Finding 6): trust it
   only for iris + white-box DTA; on wine / under HSJ it goes flat. Prefer **recall** cross-dataset.
+  → **PARTIALLY RESOLVED (2026-08-17, §8):** use **kNN-local spread (M4)** instead of raw OPTICS
+  spread — it recovers wine (1.055 vs 1.012 @0.8) and keeps iris; PCA-then-spread (M3) also works
+  @0.9. Black-box HSJ recovery is partial (M3 wine @0.9; M4 direction-flipped). Recall still king.
 - **before-split is the wrong protocol** for both accuracy and the geometry metric — always
   train-only with a clean test (`06-lessons-gotchas.md`).
 - **Benchmark against existing bias detection.** Aiden's notes mention Katerina

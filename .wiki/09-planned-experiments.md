@@ -79,7 +79,12 @@ adversarial-geometry probe iff it imposes a **global, structured** boundary dist
   survives only partially (RF directional n=3, SVM at frac 0.95, absent on tree+HSJ). **Class
   asymmetry confirmed** (deleting from separable setosa = null geometry + recall). **Accuracy
   confound quantified** (before-split acc→1.000 vs train-only→0.714, 30 seeds). Figs
-  `plots/imbalance_p1_{models,asymmetry,confound}.png`. Next gate: **Phase 0 shortcut /
-  spurious feature** (PLAN §3).
+  `plots/imbalance_p1_{models,asymmetry,confound}.png`.
+- 2026-08-17: **§8 dimension-robust spread metric DONE** (`FINDINGS_robust_metric.md`; same-clouds
+  guarantee verified — tree re-run 1260/1260 cells identical, svm re-run reproduces documented
+  numbers to 3 decimals) — **M4 kNN-local spread wins** (wine 1.055 vs 1.012 @0.8, iris intact,
+  clean CIs); M3 PCA-then-spread passes @0.9 (concentration equalised 0.56→0.82); M1/M2b ratio
+  metrics null (uniform stretch → ratio-invariant); raw LOF numerically unstable on white-box
+  clouds. Next gate: **Phase 0 shortcut / spurious feature** (PLAN §3).
 - Deferred/open: XGBoost per-point-timeout rework; 2-feature boundary visualisation of the
   `toward` tendril; structured (boundary-localized) label noise.

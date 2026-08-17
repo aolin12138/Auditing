@@ -194,8 +194,8 @@ Reuse `COLS` from `model_family_experiment` + add defect-specific columns:
    (`FINDINGS_variance.md`, `run_variance.py`, `run_confound.py`) — recall discriminator robust
    across dataset & model; **adversarial-SPREAD signal is fragile to dimensionality AND attack**;
    before-split = a test-set composition artifact. **→ motivates §8.**
-4. **§8 dimension-robust spread metric** (methodological — the next gate).
-5. **Phase 0 shortcut** → GO/NO-GO on per-axis displacement.
+4. **§8 dimension-robust spread metric** (methodological). ✅ DONE (`FINDINGS_robust_metric.md`, `run_robust_metric.py`, `plot_robust_metric.py`, clouds/ + `--save-clouds` in run_variance.py) — **M4 kNN-local spread wins** (wine 1.055 vs 1.012 @0.8, iris intact, clean CIs); M3 PCA-then-spread passes @0.9 (concentration equalised 0.56→0.82); M1/M2b null (stretch is uniform → ratios invariant); raw M2 unstable (near-duplicate adv points → exploding LOF). Recommended metric going forward = M4.
+5. **Phase 0 shortcut** → GO/NO-GO on per-axis displacement. **← NEXT GATE**
 6. **Phase 0 leakage** → GO/NO-GO on accuracy-inflation + local anomaly.
 7. Each phase: findings doc `FINDINGS_<defect>.md`, plots in `plots/`, journal Attempt entry.
 
@@ -212,7 +212,7 @@ pilots are cheap and safe to run first).
 
 ---
 
-## 8. Dimension-robust spread metric  ★ NEXT GATE (methodological)
+## 8. Dimension-robust spread metric  ✅ DONE 2026-08-17 (see FINDINGS_robust_metric.md)
 
 ### Motivation (from the variance study, `FINDINGS_variance.md`)
 The project's headline metric — OPTICS **mean within-cluster pairwise distance** (spread) — is
