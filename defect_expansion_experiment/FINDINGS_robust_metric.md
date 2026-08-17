@@ -48,6 +48,15 @@ so the mean goes numb. Each candidate attacks this differently.
 effect size (1.04×) is a fifth of iris (1.26×). M4 turns the same gap into a **clean**
 separation: comparable gap (0.043–0.046) at roughly **half the noise** (se ≈ 0.007 vs 0.016).
 
+**Effect-size honesty (user-observed):** on wine the clean baseline cloud is already nearly
+as dispersed as the defect arms — raw baseline 2.68 vs random 2.66–2.69 and spatial 2.78
+(baseline *exceeds* the random arm at most severities; iris baseline is 0.61 with spatial
++26%). The spatial-vs-random *contrast* also collapses ~2× on wine (+4.5% vs +9.8% iris for
+m0; +4.2% vs +9.7% for m4). So the robust metrics recover **statistical detectability** on
+wine, not the effect size — the wine defect signature is a small perturbation around a large
+clean cloud (plausible mechanism for the random arm dipping *below* baseline: minority
+deletion regularises the boundary → slightly compacter adv cloud; hypothesis, not measured).
+
 ### svm + black-box HSJ (15 seeds) — the fragile case
 
 | metric | wine frac .9 spat vs rand | sep | iris frac .9 spat vs rand | sep |
