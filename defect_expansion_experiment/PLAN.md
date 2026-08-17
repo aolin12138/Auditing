@@ -111,7 +111,7 @@ of the *same count* (delete the `1-keep` fraction lowest along feature `feat`).
 
 ---
 
-## 3. Defect B — Shortcut / spurious feature (Clever Hans)  ★ PRIORITY 2
+## 3. Defect B — Shortcut / spurious feature (Clever Hans)  ★ PRIORITY 2 — Phase 0 DONE (2026-08-17)
 
 ### Definition
 Append a 5th feature that is **label-correlated in train but not in test**. In train,
@@ -195,7 +195,7 @@ Reuse `COLS` from `model_family_experiment` + add defect-specific columns:
    across dataset & model; **adversarial-SPREAD signal is fragile to dimensionality AND attack**;
    before-split = a test-set composition artifact. **→ motivates §8.**
 4. **§8 dimension-robust spread metric** (methodological). ✅ DONE (`FINDINGS_robust_metric.md`, `run_robust_metric.py`, `plot_robust_metric.py`, clouds/ + `--save-clouds` in run_variance.py) — **substantive verdict = the honest-negative: the spread signal is genuinely dimension-limited; recall is the recommended diagnostic.** M4 kNN-local spread gives clean wine CIs (1.055 vs 1.012 @0.8) but only a +4% ripple on a clean baseline already as large as the defect arms (iris +9.8% contrast); ratio metrics (M1/M2b) provably null (uniform stretch); M3 equalises concentration (0.56→0.82) without enlarging the effect; raw LOF numerically unstable. M4 = marginal upgrade for white-box iris-like cases only.
-5. **Phase 0 shortcut** → GO/NO-GO on per-axis displacement. **← NEXT GATE**
+5. **Phase 0 shortcut** → GO/NO-GO on per-axis displacement. ✅ DONE (`FINDINGS_shortcut.md`, `run_shortcut.py`, `plot_shortcut.py`, `results_shortcut.parquet`, `plots/shortcut.png`) — **GO**: H1 CONFIRMED on iris+wine (spur_frac monotone 0.11→0.50 iris / 0.00→1.00 wine, tight CIs); first spurious split rises to the root (manipulation check); cheap-escape prediction REFUTED (adv_l2 grows — thresholds recede); geometry separates before acc collapse but never at zero cost; wine intermediate-corr dilution (the first geometry signal to fire on wine at all, at extreme reliance only). **Phase 1 (RF/SVM+HSJ) carries the caveats in FINDINGS §6.**
 6. **Phase 0 leakage** → GO/NO-GO on accuracy-inflation + local anomaly.
 7. Each phase: findings doc `FINDINGS_<defect>.md`, plots in `plots/`, journal Attempt entry.
 

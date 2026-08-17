@@ -88,5 +88,12 @@ adversarial-geometry probe iff it imposes a **global, structured** boundary dist
   metrics provably null (uniform stretch); PCA equalises concentration (0.56→0.82) without
   enlarging the effect; raw LOF numerically unstable. Next gate: **Phase 0 shortcut / spurious
   feature** (PLAN §3).
+- 2026-08-17: **Thread C Phase 0 shortcut DONE** (`FINDINGS_shortcut.md`, `plots/shortcut.png`) —
+  **GO**: H1 CONFIRMED on iris+wine (spurious-axis fraction of adv displacement rises
+  monotonically, 0.11→0.50 iris / 0.00→1.00 wine, tight CIs — the first geometry signal to fire
+  on wine at all); first spurious split rises to the root (reliance manipulation check);
+  cheap-escape prediction REFUTED (adv_l2 grows with corr — thresholds recede); geometry
+  separates before the accuracy collapse completes but never at zero accuracy cost. Phase 1
+  (RF/SVM+HSJ) next, with caveats (FINDINGS §6).
 - Deferred/open: XGBoost per-point-timeout rework; 2-feature boundary visualisation of the
   `toward` tendril; structured (boundary-localized) label noise.
