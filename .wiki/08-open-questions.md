@@ -9,15 +9,45 @@ bias into the training fold only and keep a fixed clean test set**. This isolate
 "does the model's geometry change" from "do we have different test points."
 Cheapest high-value experiment. See [06-lessons-gotchas.md](06-lessons-gotchas.md).
 
-### Higher-dimensional validation — ✅ INVESTIGATED (2026-08-16): spread does NOT survive
-Re-ran the imbalance contrast on **wine (13-D)** + **svm/HSJ** (`FINDINGS_variance.md`, Finding 6).
-**The adversarial-spread signal collapses in higher dimensions** (iris spatial 1.26× → wine
-~1.04×) and under black-box HSJ (~1.11×) — measured cause = distance concentration (std/mean 0.54
-iris vs 0.29 wine). Per-class **recall** stayed robust. **→ next: a dimension-robust spread
-metric** (kNN-ratio, LOF-style density ratio, PCA-then-spread, kNN-graph local spread) — test
-whether any recovers the wine signal raw spread lost. Full spec in
-`defect_expansion_experiment/PLAN.md §8`. A >50-D set (digits) would stress it further.
-**Interim conclusion:** if no robust metric is found, recall is the recommended black-box diagnostic.
+### Higher-dimensional validation — ✅ CLOSED (2026-08-17): spread is dimension-limited
+Re-ran the imbalance contrast on **wine (13-D)** + **svm/HSJ** (`FINDINGS_variance.md`, Finding 6):
+the adversarial-spread signal collapses in higher dimensions (iris spatial 1.26× → wine ~1.04×)
+and under black-box HSJ — measured cause = distance concentration (std/mean 0.54 iris vs 0.29 wine).
+**§8 then tested four dimension-robust candidates** (kNN-ratio, LOF, PCA-then-spread, kNN-local) on
+the same clouds: **none recovers a meaningful wine signal** (`FINDINGS_robust_metric.md`). Best case
+(kNN-local) is a +4% ripple on a clean baseline already as large as the defect arms. **Conclusion:
+scalar spread is genuinely dimension-limited; per-class recall is the recommended black-box
+diagnostic.** A >50-D set would only confirm this.
+
+### Signal-directed dimension reduction before the metric (proposed 2026-08-17, OPEN)
+The dimensionality problem that sank the spread signal invites an obvious fix: **reduce dimensions
+before computing the metric.** This was *partly* tested — **M3 (PCA-then-spread)** in §8 projected the
+adversarial cloud onto its top-3 PCs, then measured spread. It **fixed the concentration**
+(std/mean 0.56→0.82) but did **not enlarge the effect**, because on wine the defect barely
+perturbs the geometry at all (the clean cloud is already as dispersed as the defect clouds).
+**Lesson: dimension reduction fixes the *measurement*, not the *existence* of a signal.**
+
+The sharper, untested version: reduce to the **signal-carrying** subspace, not the top-variance
+subspace. Unsupervised PCA finds max-variance directions, which need not align with the directions
+the defect distorts. Candidate: find the directions where the *defect* adversarial cloud differs
+most from a *clean-baseline* cloud (a supervised / discriminative reduction), then measure spread
+only there. **Evidence this direction is right:** the shortcut result (Finding 7) is exactly this
+idea in its *known-axis* form — we measure displacement on the one axis carrying the signal, and it
+works and survives to wine + black-box. **Open question:** can the signal-carrying subspace be
+*discovered* from the adversarial cloud when we don't know it a priori (coverage-gap / imbalance)?
+**Honest caveat:** if a defect genuinely doesn't distort the boundary in high-D (the wine finding),
+no subspace selection can manufacture a signal.
+
+### Shortcut / spurious feature — ✅ DONE (2026-08-17)
+The "defect that hurts data quality without collapsing accuracy" premise, tested (Finding 7).
+A per-axis metric detects it, survives wine + black-box HSJ — but the signal co-moves with accuracy
+(never zero-cost). The pure accuracy-*inflating* case is next:
+
+### Train–test leakage / duplication — ⭐ NEXT (`PLAN.md §4`)
+Leakage inflates accuracy (the model looks *great*) while creating memorized, over-confident local
+geometry. Tests whether the probe flags a defect that accuracy actively *hides*. Metric:
+memorization locality. This is the inverse of every defect so far — the only one where accuracy
+moves the *wrong* way.
 
 ### A defect that hurts data quality without collapsing accuracy
 The strongest test of the whole premise. Label noise fails partly because it

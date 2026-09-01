@@ -67,6 +67,32 @@ We report **spread** because a distance is more directly interpretable. We do
 NOT claim spread is a "better metric" — see [06-lessons-gotchas.md](06-lessons-gotchas.md)
 for the formula subtlety that makes this important.
 
+## New defects & metrics (Thread C, 2026-08 — `defect_expansion_experiment/`)
+
+Thread C adds three defects and moves past scalar spread when the geometry demands it:
+
+**Defects:**
+- **Class imbalance** — uniform random deletion of a target class (the count-controlled sibling
+  of coverage gap's spatial deletion). Contrast the two at matched count.
+- **Shortcut / spurious feature (Clever Hans)** — append a 5th feature label-correlated in train,
+  pure noise in test. The model cheats on an axis meaningless at test time.
+- **Train–test leakage / duplication** (planned, §4) — leaked/duplicated points inflate accuracy
+  while creating memorized local geometry.
+
+**Metrics (matched to the defect's geometry):**
+- **Per-class recall** — the robust cross-dataset/cross-model separator (Finding 6). For
+  imbalance, minority-class recall craters under spatial deletion vs uniform.
+- **Per-axis adversarial displacement** (`spur_frac`) — fraction of the adversarial L2
+  displacement on a given axis; the right tool for *directional* defects like the shortcut
+  (Finding 7). Scalar spread misses them.
+- **Dimension-robust spread candidates** (§8) — kNN-ratio, LOF density ratio, PCA-then-spread,
+  kNN-local. Tested to rescue scalar spread on 13-D wine; **none recovered a meaningful effect**
+  (spread is dimension-limited).
+
+**Models now include** overfit tree (`max_depth=None`) and RandomForest; datasets extend to
+**wine (13-D)** for the dimensionality check. Injection is **train-fold-only** (fixed clean test)
+to avoid the before-split composition artifact (`06-lessons-gotchas.md`).
+
 ## Experiment grids (360 runs each)
 
 | Grid | Models | Attack | Defects |

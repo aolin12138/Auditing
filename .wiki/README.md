@@ -33,17 +33,24 @@ accuracy (so accuracy already flags it) or its direction depends on class
 separability. Verified with a compression-ratio test that distinguishes a real
 attack signal (ratio ~0.70) from an artifact (ratio → 1.0).
 
-## Status (2026-08-16)
+## Status (2026-08-17)
 
-- Threads **A (outlier)** + **B (model families)** complete; **C (defect expansion)**: class
-  imbalance **Phase 0 + Phase 1** done, plus a **cross-dataset variance study** (iris + wine,
-  tree/DTA + svm/HSJ) — see `defect_expansion_experiment/FINDINGS_{imbalance,imbalance_p1,variance}.md`.
-- **Key 2026-08 result:** per-class **recall** is the robust cross-dataset/cross-model separator;
-  the adversarial-**spread** signal is dimension- and attack-fragile (Finding 6). **Next gate =
-  dimension-robust spread metric** (`PLAN.md §8`).
+- Threads **A (outlier)** + **B (model families)** complete. **C (defect expansion)**: class
+  imbalance **Phase 0+1** + **cross-dataset variance study** done; **§8 dimension-robust spread
+  metric** done (honest-negative); **shortcut / Clever Hans** defect **Phase 0 (tree+DTA) +
+  Phase 1 (svm+HSJ)** done. See
+  `defect_expansion_experiment/FINDINGS_{imbalance,imbalance_p1,variance,robust_metric,shortcut}.md`.
+- **Key results:** (1) per-class **recall** = the robust cross-dataset/cross-model separator; the
+  scalar **spread** signal is dimension- and attack-fragile (Finding 6) and **no re-normalised
+  metric rescues it** (§8 — spread is genuinely dimension-limited). (2) The **shortcut** defect
+  needs a **per-axis** metric (fraction of adversarial displacement on the cheat axis), not scalar
+  spread — and that signal **survives to wine and to black-box HSJ** (Finding 7). *The metric must
+  match the defect's geometry: spatial-hole defects → spread; directional defects → per-axis.*
+- **Next:** Phase 0 **leakage / duplication** (`PLAN.md §4`) — the defect where accuracy
+  *inflates*, testing whether geometry catches what accuracy actively hides.
 - Earlier: 3 grids (360 runs each), mid-year report (`midyear_report.docx`), conference deck,
-  6 report figures (`figures/report/`).
-- Reviewed reusable research skills (`nature-skills`) → [10-tooling-and-skills.md](10-tooling-and-skills.md).
+  6 report figures (`figures/report/`); reusable research skills (`nature-skills`) →
+  [10-tooling-and-skills.md](10-tooling-and-skills.md).
 - **Repo:** github.com/aolin12138/Auditing (origin), upstream Aidan-Jared/Auditing
 
 ## Headline numbers

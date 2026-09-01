@@ -25,6 +25,20 @@ Auditing/
 ├── hsj_label_noise_experiment/  GRID 3: Tree+SVM + HSJ, label noise
 │   ├── run_experiment.py, results.parquet, plots/
 │
+├── outlier_experiment/          THREAD A: outlier defect (correctly-labeled anomalies)
+│   ├── run_experiment.py, run_*.py, MECHANISM.md, FINDINGS_*.md, plots/
+├── model_family_experiment/     THREAD B: RandomForest/XGBoost via HSJ, cross-model
+│   ├── run_experiment.py, FINDINGS_*.md, plots/
+├── defect_expansion_experiment/ THREAD C: imbalance, shortcut, leakage (planned)
+│   ├── PLAN.md                   The Thread-C contract (§-by-§ status)
+│   ├── run_imbalance.py, run_p1.py, run_confound.py, run_variance.py
+│   ├── run_robust_metric.py      §8 dimension-robust spread candidates
+│   ├── run_shortcut.py           Clever Hans (tree+DTA / svm+HSJ via --model svm)
+│   ├── plot_*.py, plotstyle.py   (colorblind-safe shared style)
+│   ├── FINDINGS_{imbalance,imbalance_p1,variance,robust_metric,shortcut}.md
+│   ├── results_*.parquet         (committed; clouds/ gitignored)
+│   └── plots/{imbalance,variance,spread_metric,shortcut}/  + README.md index
+│
 ├── experiments/
 │   ├── eda_v2.ipynb             Tree strategy analysis (overfit vs pruned)
 │   ├── hopskipjump_bias.ipynb   Early HSJ notebook

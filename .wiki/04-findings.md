@@ -193,6 +193,37 @@ PCA-then-spread equalises concentration (0.56→0.82) without enlarging the effe
 numerically unstable on white-box clouds. M4 = marginal upgrade for white-box iris-like
 cases only.
 
+## Finding 7 — Shortcut / spurious feature: a directional defect needs a per-axis metric (2026-08-17)
+
+`defect_expansion_experiment/` (`run_shortcut.py`, `FINDINGS_shortcut.md`,
+`plots/shortcut/{phase0,svm_hsj}.png`). A 5th feature is label-correlated in **train**
+(`corr·(y−1)+N(0,1)`) but **pure noise in test** — a Clever Hans shortcut. Sweep shortcut
+strength `corr ∈ {0..8}`, tree+DTA (30 seeds) and svm+HSJ (15 seeds), iris + wine.
+
+- **Scalar spread FAILS on this defect** (both m0 raw and m4 kNN-local): null on iris, and on
+  wine it moves only at extreme doses *after accuracy has already collapsed*. Reason: the
+  shortcut *reshuffles* the adversarial cloud within a noise axis it already spans (no new
+  territory, unlike the coverage-gap hole), the distortion is 1-dimensional, and scalar spread
+  averages it away over all d+1 axes.
+- **The right metric is per-axis:** `spur_frac` = fraction of the adversarial L2 displacement
+  carried by the spurious axis. It rises **monotonically** with `corr` — iris 0.11→0.50, wine
+  0.00→1.00 (tight CIs) — because the boundary leans on the cheat axis, so adversarial escapes
+  travel along it. Manipulation check: the first spurious split rises to the tree root; test
+  accuracy collapses.
+- **Survives black-box HSJ (Phase 1):** on svm+HSJ the per-axis signal separates from control by
+  corr=2 and peaks at corr=4 (iris 0.35, wine 0.46 — 24×/19× the control), then dips at corr=8
+  (survivorship). **Model-type flip:** wine leads under svm+HSJ (smooth boundary leans on the
+  global cheat axis) whereas iris led under tree+DTA (the overfit tree exploits iris's separable
+  real features instead).
+- **Caveat:** the geometry co-moves with accuracy — it separates *before* the accuracy collapse
+  completes, but never at *zero* accuracy cost (first separation at ~−0.05 acc on iris tree,
+  ~−0.11 on iris svm). Not an accuracy-blind detector.
+
+**Takeaway:** the metric must match the defect's geometry. Spatial-hole defects (coverage gap /
+imbalance) → scalar spread. Directional defects (shortcut) → per-axis displacement. This reframes
+"the spread signal is fragile" as "spread is the wrong tool for directional defects", and gives
+the project its **first geometry signal that survives both dimensionality and a black-box attack**.
+
 ## Metric decomposition note
 
 Density combines cluster size and spread. On Tree+DTA coverage gap, cluster size
