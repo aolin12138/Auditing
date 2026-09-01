@@ -100,5 +100,12 @@ adversarial-geometry probe iff it imposes a **global, structured** boundary dist
   model-type flip vs the tree), survivorship dip at corr=8; cheap escape partially reappears on
   wine (adv_l2 dips at moderate corr); scalar spread still a late byproduct (fires only after
   acc collapse). RF+HSJ deferred (hang-prone).
+- 2026-08-17: **Thread C Phase 0 leakage DONE** (`FINDINGS_leakage.md`, `plots/leakage/phase0.png`)
+  — **split verdict**: H2 CONFIRMED (measured accuracy inflates 0.94→0.97 iris / 0.90→0.94 wine
+  while honest clean accuracy is flat — accuracy fully fooled); **H1 NULL** (leaked points have the
+  same adversarial margin as clean — the overfit tree memorizes all training data uniformly, no
+  local signature). **Confirms the §0 principle**: leakage is a LOCAL defect → invisible to the
+  global-distortion probe — the clean counterexample (accuracy maximally fooled, geometry blind).
+  Phase 1 = mode=dup + RF/pruned (selective memorization), weak expectation.
 - Deferred/open: XGBoost per-point-timeout rework; 2-feature boundary visualisation of the
-  `toward` tendril; structured (boundary-localized) label noise.
+  `toward` tendril; structured (boundary-localized) label noise; leakage Phase 1 (dup+RF).

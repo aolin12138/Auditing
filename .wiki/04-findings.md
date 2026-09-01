@@ -224,6 +224,22 @@ imbalance) → scalar spread. Directional defects (shortcut) → per-axis displa
 "the spread signal is fragile" as "spread is the wrong tool for directional defects", and gives
 the project its **first geometry signal that survives both dimensionality and a black-box attack**.
 
+## Finding 8 — Train–test leakage: accuracy is fooled, geometry is blind (2026-08-17)
+
+`defect_expansion_experiment/` (`run_leakage.py`, `FINDINGS_leakage.md`, `plots/leakage/phase0.png`).
+Copy `n_leak` train points into the test fold (overfit tree + DTA, iris + wine, 30 seeds).
+
+- **H2 confirmed decisively:** measured test accuracy inflates (iris 0.94→0.97, wine 0.90→0.94)
+  while *honest* accuracy on non-leaked points is exactly flat. The accuracy gain is 100% fake.
+- **H1 null:** leaked points have the same adversarial margin as clean points (CIs overlap, no
+  trend). The overfit tree memorizes ALL training data into pure leaves, so a leaked point has no
+  distinct pocket — the memorization is *uniform, not local*.
+- **This CONFIRMS the organizing principle** (`PLAN.md §0`): a defect is visible to the probe iff
+  it imposes a *global, structured* distortion. Leakage is *local* → invisible. It is the clean
+  counterexample — the defect where **accuracy is maximally fooled and geometry catches nothing**.
+- Phase 1 (`mode=dup` + RF/pruned, i.e. *selective* memorization) is where a locality signal could
+  exist, with weak expectation.
+
 ## Metric decomposition note
 
 Density combines cluster size and spread. On Tree+DTA coverage gap, cluster size

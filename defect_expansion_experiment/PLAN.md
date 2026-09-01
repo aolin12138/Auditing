@@ -146,7 +146,7 @@ Append a 5th feature that is **label-correlated in train but not in test**. In t
 
 ---
 
-## 4. Defect C — Train–test leakage / duplication  ★ PRIORITY 3
+## 4. Defect C — Train–test leakage / duplication  ★ PRIORITY 3 — Phase 0 DONE (2026-08-17)
 
 ### Definition
 Copy `n_leak` train points (optionally with tiny jitter) **into the test fold** (leakage), or
@@ -196,7 +196,7 @@ Reuse `COLS` from `model_family_experiment` + add defect-specific columns:
    before-split = a test-set composition artifact. **→ motivates §8.**
 4. **§8 dimension-robust spread metric** (methodological). ✅ DONE (`FINDINGS_robust_metric.md`, `run_robust_metric.py`, `plot_robust_metric.py`, clouds/ + `--save-clouds` in run_variance.py) — **substantive verdict = the honest-negative: the spread signal is genuinely dimension-limited; recall is the recommended diagnostic.** M4 kNN-local spread gives clean wine CIs (1.055 vs 1.012 @0.8) but only a +4% ripple on a clean baseline already as large as the defect arms (iris +9.8% contrast); ratio metrics (M1/M2b) provably null (uniform stretch); M3 equalises concentration (0.56→0.82) without enlarging the effect; raw LOF numerically unstable. M4 = marginal upgrade for white-box iris-like cases only.
 5. **Phase 0 shortcut** → GO/NO-GO on per-axis displacement. ✅ DONE (`FINDINGS_shortcut.md`, `run_shortcut.py`, `plot_shortcut.py`, `results_shortcut{,_svm}.parquet`, `plots/shortcut/{phase0,svm_hsj}.png`) — **GO**: H1 CONFIRMED on iris+wine (spur_frac monotone 0.11→0.50 iris / 0.00→1.00 wine, tight CIs); first spurious split rises to the root (manipulation check); cheap-escape prediction REFUTED on the tree (adv_l2 grows — thresholds recede) but PARTIALLY SUPPORTED under svm+HSJ (wine adv_l2 dips at moderate corr); **svm+HSJ: per-axis signal SURVIVES the black-box attack** (peak corr=4, wine leads — model-type flip); geometry separates before acc collapse but never at zero cost; scalar spread = late byproduct (fires only after acc collapse). RF+HSJ deferred.
-6. **Phase 0 leakage** → GO/NO-GO on accuracy-inflation + local anomaly.
+6. **Phase 0 leakage** → GO/NO-GO on accuracy-inflation + local anomaly. ✅ DONE (`FINDINGS_leakage.md`, `run_leakage.py`, `plot_leakage.py`, `results_leakage.parquet`, `plots/leakage/phase0.png`) — **split verdict**: H2 CONFIRMED (measured vacc inflates 0.94→0.97 iris / 0.90→0.94 wine while honest vacc_clean is flat — accuracy is fully fooled); **H1 NULL** (leaked points have the same adversarial margin as clean — the overfit tree memorizes ALL training data uniformly, so leakage leaves no local signature). **This CONFIRMS the §0 principle**: leakage is a LOCAL defect → invisible to the global-distortion probe. Phase 1 (mode=dup + RF/pruned, selective memorization) is where a locality signal could exist — weak expectation.
 7. Each phase: findings doc `FINDINGS_<defect>.md`, plots in `plots/`, journal Attempt entry.
 
 **Alignment gate:** confirm this plan with the user before Phase 1 of any defect (the Phase 0
