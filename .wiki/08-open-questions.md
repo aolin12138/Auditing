@@ -38,6 +38,14 @@ works and survives to wine + black-box. **Open question:** can the signal-carryi
 **Honest caveat:** if a defect genuinely doesn't distort the boundary in high-D (the wine finding),
 no subspace selection can manufacture a signal.
 
+**→ CONCRETE PLAN (2026-08-17): `defect_expansion_experiment/PLAN.md §9`** — a controlled study on
+the verified defects (coverage gap + imbalance): pad iris with `m` noise dimensions (signal stays in
+the original 4), sweep `m`, and test whether (a) raw spread decays with `m`, (b) dimension reduction
+(unsupervised PCA vs signal-directed) recovers the KNOWN signal buried in noise, (c) feature
+normalization (whitening vs z-score) and metric normalization (Cohen's d, ÷expected-distance) keep
+the signal consistent across dimensions. Disambiguates the §8 negative: dimensionality-per-se vs
+defect-not-distorting (does the same reduction that rescues padded-iris also rescue wine?).
+
 ### Shortcut / spurious feature — ✅ DONE (2026-08-17)
 The "defect that hurts data quality without collapsing accuracy" premise, tested (Finding 7).
 A per-axis metric detects it, survives wine + black-box HSJ — but the signal co-moves with accuracy

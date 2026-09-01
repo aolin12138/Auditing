@@ -258,3 +258,76 @@ on the **same** adversarial clouds and check, with 95% CIs:
 ### Deliverables
 `run_robust_metric.py` (imports the adversarial clouds / re-generates), `plot_robust_metric.py`,
 `FINDINGS_robust_metric.md` (per-candidate recovery table + verdict), journal Attempt entry.
+
+---
+
+## 9. Dimensionality, normalization & signal-directed reduction study  ★ NEXT SESSION (planned 2026-08-17)
+
+### Motivation
+§8 found scalar spread is dimension-limited on wine and closed the "just re-normalise the metric"
+avenue as a negative. Two questions remain open (see `.wiki/08-open-questions.md`):
+1. Is the failure **dimensionality per se** (distance concentration burying a real signal) or the
+   defect **genuinely not distorting** high-D geometry? On wine we cannot separate "more dims" from
+   "different data".
+2. Can **dimension reduction before the metric**, plus the right **feature/metric normalization**,
+   recover or stabilise the signal? (User instinct, 2026-08-17.)
+
+This study answers both in a CONTROLLED setting where the ground-truth signal dimensionality is known.
+
+### The controlled design (the key idea)
+Use the VERIFIED defects — **coverage gap (spatial) vs class imbalance (random)** on **iris**, where
+spread works at 4-D. Then **pad with `m` pure-noise dimensions** (standardized N(0,1)),
+`m ∈ {0, 5, 10, 20, 50, 100}`. The signal lives entirely in the original 4 dims; the `m` padding
+dims are ground-truth-uninformative. This isolates **pure dimensionality** from dataset structure —
+the disambiguation wine could not give.
+
+Prediction: raw spread's spatial-vs-random separation decays monotonically with `m` (concentration).
+If reduction back to ~4 dims recovers the `m=0` signal → dimensionality per se was the problem and
+reduction is the fix. If the same reduction still fails on **wine** → wine's problem is the defect
+not distorting its geometry, not dimensionality. **This disambiguates the §8 negative.**
+
+### Arms
+1. **Dimensionality sweep (baseline):** raw OPTICS spread, spatial vs random, m-padded iris.
+   Report **Cohen's d (spatial vs random)** vs `m` (dimensionless → cross-dim comparable) + normalised
+   spread + the distance-concentration std/mean vs `m`. Confirm decay + measure its rate.
+2. **Feature normalization:** z-score (current) vs **PCA-whitening** (decorrelate + unit variance) vs
+   robust-scale. Distance is scale/covariance-sensitive; does whitening (axis equalisation) slow the
+   decay?
+3. **Dimension reduction before the metric:**
+   a. **Unsupervised PCA-to-k** on the adversarial cloud (= §8 m3, now under controlled `m`).
+   b. **Signal-directed reduction** — project the adversarial cloud onto the subspace where the
+      DEFECT cloud differs most from a CLEAN-baseline cloud (difference-of-means direction and/or
+      LDA / top discriminative components), then measure spread there. The sharper idea from
+      08-open-questions; the shortcut result is its known-axis special case.
+   Success = does k-reduction recover the `m=0` signal at `m=50/100`?
+4. **Metric normalization for cross-dimension consistency:** compare (i) ÷ clean baseline (current),
+   (ii) ÷ expected pairwise distance in that dim (÷ median pairwise, or ÷√d), (iii) Cohen's d
+   (dimensionless). Goal: a signal measure comparable at d=4 and d=104.
+5. **External validity:** repeat arms 1+3 on real datasets of increasing dim (iris 4 → wine 13 →
+   digits 64) to confirm the padded-iris conclusions transfer and re-test the wine disambiguation.
+
+### Hypotheses
+- **H1:** raw spread signal (Cohen's d) decays monotonically with `m` (concentration) — padded iris.
+- **H2:** signal-directed reduction recovers the `m=0` signal at high `m` on padded iris (the signal
+  is in a fixed low-D subspace we can find); unsupervised PCA partially recovers.
+- **H3:** whitening slows the decay vs z-score (axis equalisation reduces noise-dim contribution).
+- **H4 (disambiguation):** if reduction recovers padded-iris but NOT wine → wine's failure is the
+  defect not distorting geometry, not dimensionality. Nails the §8 negative's cause.
+
+### Success criteria (observable)
+1. Padded-iris raw Cohen's-d vs `m` shows monotone decay with CIs → H1.
+2. ∃ a reduction variant where padded-iris spatial-vs-random CIs **re-separate at m≥50** while raw
+   does not → H2 (headline: dimension reduction rescues a KNOWN signal buried in noise dims).
+3. A stated recommended (feature-norm, metric-norm, reduction) triple that keeps the signal
+   comparable iris↔wine↔digits — or an explicit "none does, because…" → closes the metric question.
+4. H4 answered: reduction on wine either recovers (→ dimensionality) or not (→ defect geometry).
+
+### Deliverables
+`run_dimensionality.py` (padded-iris + real-dataset sweeps, coverage-gap + imbalance, --save-clouds),
+`run_reduction.py` (metric variants on saved clouds — reuse §8 cloud persistence),
+`plot_dimensionality.py`, `FINDINGS_dimensionality.md`, journal Attempt + wiki update.
+
+### Reuse
+`inject_cg`/`inject_delete` (spatial vs random deletion), `cluster_stats` (spread),
+`run_variance.py --save-clouds` pattern (persist clouds once, iterate metrics offline),
+`plotstyle.py`. Cohen's d helper already used in the report figures.
