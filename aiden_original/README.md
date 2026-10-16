@@ -1,3 +1,8 @@
+> **Provenance (verified 2026-10-16):** these files are Aidan Jared's code as of his last commit `f771f9a`
+> (24 Mar 2026) with **one change made by us**: `util.py` line 267 `np.linalg.norm((point1, point2))` was
+> corrected to `np.linalg.norm(point1 - point2)` in commit `b8a821c` (2026-07-17). For the untouched original
+> use `git show f771f9a:util.py`. His split-first, training-only bias injection (lines 187-196) is unchanged.
+
 # Aiden's Original Code (preserved for reference)
 
 This folder contains the original codebase from prior work by Aiden, preserved

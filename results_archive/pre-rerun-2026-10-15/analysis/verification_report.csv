@@ -1,0 +1,88 @@
+claim,claimed,actual,n,lo,hi,verdict,note
+imbalance norm-spread random @frac=0.25,1.03,1.0291,30,0.9903,1.0678,PASS,
+imbalance norm-spread spatial @frac=0.25,1.07,1.0745,30,1.0302,1.1187,PASS,
+imbalance CIs separate @frac=0.25,,0.0,30,,,INFO,CLAIM: overlap
+imbalance norm-spread random @frac=0.5,1.07,1.0744,30,1.0402,1.1086,PASS,
+imbalance norm-spread spatial @frac=0.5,1.19,1.1929,30,1.1541,1.2317,PASS,
+imbalance CIs separate @frac=0.5,,1.0,30,,,INFO,CLAIM: separate from frac>=0.5
+imbalance norm-spread random @frac=0.7,1.13,1.1261,30,1.0768,1.1754,PASS,
+imbalance norm-spread spatial @frac=0.7,1.23,1.2265,30,1.1843,1.2688,PASS,
+imbalance CIs separate @frac=0.7,,1.0,30,,,INFO,CLAIM: separate from frac>=0.5
+imbalance norm-spread random @frac=0.85,1.19,1.187,30,1.1463,1.2278,PASS,
+imbalance norm-spread spatial @frac=0.85,1.34,1.344,30,1.2869,1.4011,PASS,
+imbalance CIs separate @frac=0.85,,1.0,30,,,INFO,CLAIM: separate from frac>=0.5
+imbalance norm-spread random @frac=0.95,1.24,1.2427,30,1.1935,1.2919,PASS,
+imbalance norm-spread spatial @frac=0.95,1.37,1.3702,30,1.3115,1.4289,PASS,
+imbalance CIs separate @frac=0.95,,1.0,30,,,INFO,CLAIM: separate from frac>=0.5
+min_recall spatial @frac=0.25,0.77,0.772,30,0.7585,0.7855,PASS,
+min_recall spatial @frac=0.95,0.14,0.1433,30,0.1406,0.146,PASS,
+min_recall random @frac=0.25,0.91,0.9053,30,0.8932,0.9175,PASS,
+min_recall random @frac=0.95,0.61,0.6147,30,0.5844,0.6449,PASS,
+spatial test accuracy @frac=0.95,0.71,0.7144,30,0.7135,0.7153,PASS,
+shortcut tree/iris spur_frac @corr=0.0,0.108,0.1076,30,0.0866,0.1286,PASS,
+shortcut tree/iris spur_frac @corr=2.0,0.262,0.2619,30,0.2406,0.2833,PASS,
+shortcut tree/iris spur_frac @corr=4.0,0.321,0.3213,30,0.2832,0.3595,PASS,
+shortcut tree/iris spur_frac @corr=8.0,0.5,0.5,30,0.5,0.5,PASS,
+shortcut tree/wine spur_frac @corr=0.0,0.002,0.0015,30,-0.0004,0.0034,DRIFT,
+shortcut tree/wine spur_frac @corr=2.0,0.082,0.0816,30,0.0588,0.1045,PASS,
+shortcut tree/wine spur_frac @corr=4.0,0.197,0.1965,30,0.1468,0.2462,PASS,
+shortcut tree/wine spur_frac @corr=8.0,1.0,1.0,30,1.0,1.0,PASS,
+shortcut tree/iris monotone over corr 0..4,,1.0,5,,,INFO,"seq=[np.float64(0.108), np.float64(0.119), np.float64(0.148), np.float64(0.262), np.float64(0.321)] CLAIM: monotone rise"
+shortcut tree/wine monotone over corr 0..4,,1.0,5,,,INFO,"seq=[np.float64(0.002), np.float64(0.004), np.float64(0.009), np.float64(0.082), np.float64(0.197)] CLAIM: monotone rise"
+shortcut tree/iris scalar spread ratio @corr=2.0,,1.0327,30,1.0,1.0655,INFO,CLAIM: null on iris (within +-5%)
+shortcut tree/iris scalar spread ratio @corr=4.0,,1.0522,30,1.0139,1.0905,INFO,CLAIM: null on iris (within +-5%)
+shortcut tree/iris scalar spread ratio @corr=8.0,,0.9847,30,0.953,1.0164,INFO,CLAIM: null on iris (within +-5%)
+shortcut tree/wine scalar spread ratio @corr=2.0,,1.0018,30,0.9855,1.0182,INFO,CLAIM: null on iris (within +-5%)
+shortcut tree/wine scalar spread ratio @corr=4.0,,1.1139,30,1.0799,1.1478,INFO,CLAIM: null on iris (within +-5%)
+shortcut tree/wine scalar spread ratio @corr=8.0,,1.194,30,1.1542,1.2338,INFO,CLAIM: null on iris (within +-5%)
+shortcut svm/iris spur_frac @corr=0.0,0.015,0.0147,15,0.0132,0.0162,PASS,
+shortcut svm/iris spur_frac @corr=2.0,0.127,0.1266,15,0.1162,0.1369,PASS,
+shortcut svm/iris spur_frac @corr=4.0,0.354,0.3539,15,0.3352,0.3726,PASS,
+shortcut svm/iris spur_frac @corr=8.0,0.23,0.2297,4,0.1047,0.3547,PASS,
+shortcut svm/wine spur_frac @corr=0.0,0.024,0.0237,15,0.021,0.0263,PASS,
+shortcut svm/wine spur_frac @corr=2.0,0.226,0.2259,15,0.2158,0.2361,PASS,
+shortcut svm/wine spur_frac @corr=4.0,0.455,0.4546,15,0.4455,0.4638,PASS,
+shortcut svm/wine spur_frac @corr=8.0,0.365,0.3652,15,0.3338,0.3966,PASS,
+shortcut svm/iris monotone over corr 0..4,,1.0,5,,,INFO,"seq=[np.float64(0.015), np.float64(0.022), np.float64(0.043), np.float64(0.127), np.float64(0.354)] CLAIM: monotone rise"
+shortcut svm/wine monotone over corr 0..4,,1.0,5,,,INFO,"seq=[np.float64(0.024), np.float64(0.04), np.float64(0.085), np.float64(0.226), np.float64(0.455)] CLAIM: monotone rise"
+shortcut svm/iris scalar spread ratio @corr=2.0,,1.1003,15,1.0538,1.1468,INFO,CLAIM: null on iris (within +-5%)
+shortcut svm/iris scalar spread ratio @corr=4.0,,1.2213,15,1.1475,1.2951,INFO,CLAIM: null on iris (within +-5%)
+shortcut svm/iris scalar spread ratio @corr=8.0,,0.9843,3,0.6917,1.2768,INFO,CLAIM: null on iris (within +-5%)
+shortcut svm/wine scalar spread ratio @corr=2.0,,0.997,15,0.9726,1.0214,INFO,CLAIM: null on iris (within +-5%)
+shortcut svm/wine scalar spread ratio @corr=4.0,,1.1025,15,1.0689,1.136,INFO,CLAIM: null on iris (within +-5%)
+shortcut svm/wine scalar spread ratio @corr=8.0,,1.539,14,1.3189,1.7591,INFO,CLAIM: null on iris (within +-5%)
+fitvsmeasure spread_measure_full d @m=0,1.96,1.9559,30,1.4915,2.6109,PASS,
+fitvsmeasure spread_measure_full d @m=100,0.11,0.1055,30,-0.3804,0.6314,PASS,
+fitvsmeasure spread_fit_full d @m=0,1.96,1.9559,30,1.4915,2.6109,PASS,
+fitvsmeasure spread_fit_full d @m=100,0.23,0.2324,30,-0.2749,0.7436,PASS,
+fitvsmeasure spread_fit_real d @m=0,1.96,1.9559,30,1.4915,2.6109,PASS,
+fitvsmeasure spread_fit_real d @m=100,1.96,1.9559,30,1.4915,2.6109,PASS,
+fitvsmeasure HEADLINE: pre-fit selection holds while raw dies,,1.0,60,,,INFO,"d_fit_real@m100=+1.96, d_raw@m100=+0.11"
+wine k=2 spatial norm-spread,1.48,1.4751,30,1.3781,1.572,PASS,
+wine k=2 Cohen's d,2.04,2.0352,30,1.5658,2.7122,PASS,
+wine k=3 spatial norm-spread,1.11,1.1091,30,1.0657,1.1525,PASS,
+wine k=3 Cohen's d,1.47,1.469,30,0.9301,2.2599,PASS,
+wine k=4 spatial norm-spread,1.06,1.0608,30,1.0314,1.0901,PASS,
+wine k=4 Cohen's d,1.51,1.5146,30,0.967,2.2519,PASS,
+wine k=6 spatial norm-spread,1.01,1.0084,30,0.9828,1.034,PASS,
+wine k=6 Cohen's d,0.38,0.3841,30,-0.1085,0.874,PASS,
+wine k=13 spatial norm-spread,0.99,0.9861,30,0.9739,0.9984,PASS,
+wine k=13 Cohen's d,-0.12,-0.1243,30,-0.674,0.3867,PASS,
+leakage iris measured acc @n_leak=0,0.943,0.9429,30,0.9393,0.9465,PASS,
+leakage iris honest acc @n_leak=0,0.943,0.9429,30,0.9393,0.9465,PASS,
+leakage iris measured acc @n_leak=10,0.957,0.9572,30,0.9544,0.9599,PASS,
+leakage iris honest acc @n_leak=10,0.943,0.9429,30,0.9393,0.9465,PASS,
+leakage iris measured acc @n_leak=20,0.966,0.9657,30,0.9636,0.9679,PASS,
+leakage iris honest acc @n_leak=20,0.943,0.9429,30,0.9393,0.9465,PASS,
+leakage iris margin null @n_leak=5,,1.0,30,,,INFO,CLAIM: CIs overlap (no locality signal)
+leakage iris margin null @n_leak=20,,1.0,30,,,INFO,CLAIM: CIs overlap (no locality signal)
+leakage wine margin null @n_leak=5,,1.0,30,,,INFO,CLAIM: CIs overlap (no locality signal)
+leakage wine margin null @n_leak=20,,1.0,30,,,INFO,CLAIM: CIs overlap (no locality signal)
+negative control iris_contested Cohen's d,2.23,2.2293,30,1.7698,2.9338,PASS,
+negative control iris_separated Cohen's d,-0.05,-0.0532,30,-0.5722,0.4315,DRIFT,
+negative control blobs_healthy Cohen's d,-0.26,-0.258,30,-0.7745,0.228,PASS,
+negative control rand_null Cohen's d,0.29,0.2921,30,-0.1971,0.8326,PASS,
+model-family rf spread @bias=0.1,0.657,0.6574,9,0.6006,0.7142,PASS,BEFORE-SPLIT protocol; low n per cell
+model-family rf spread @bias=0.9,0.793,0.7929,9,0.6805,0.9053,PASS,BEFORE-SPLIT protocol; low n per cell
+outlier tree_d3 toward k=8 norm spread,1.36,1.36,10,1.2922,1.4278,PASS,
+outlier svm outward k=8 norm spread (claimed null),1.0,1.052,10,0.9789,1.1251,DRIFT,

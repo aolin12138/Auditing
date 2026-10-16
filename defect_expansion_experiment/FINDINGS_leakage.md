@@ -25,6 +25,13 @@ watching only test accuracy sees the model *improve*.
 
 ## F2 — H1 NULL: leaked points have no distinct adversarial signature ❌ (for the overfit tree)
 
+> **Revision (2026-10-16, final-report analysis, `analysis/figures.py` fig_blind_spots):** with a *paired* per-seed ratio
+> (leaked / non-leaked margin, same seed) the margins agree up to n_leak = 10, but at n_leak = 20 leaked margins are 3–4%
+> smaller with CIs excluding 1 (iris 0.959 [0.933, 0.985], wine 0.973 [0.949, 0.996]). The whole-cloud spread falls with
+> dose (paired: iris 0.69x, wine 0.86x at 20). The "composition effect / more interior" explanation below was never tested,
+> and leaked margins being equal-or-smaller argues against "more interior". Without a count-matched control the
+> whole-cloud drop cannot be attributed to leakage or to count. Do not report the geometry as "blind"; report it as undetermined.
+
 `margin_leak` (adversarial perturbation L2 for leaked points) vs `margin_clean`:
 
 | n_leak | iris leak / clean | wine leak / clean |

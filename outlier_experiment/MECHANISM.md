@@ -28,6 +28,15 @@ versicolor lies setosa's corner.* (`_diag_distance.py`)
 
 ## 1. What DTA's "nearest" actually means
 
+> **Correction (2026-10-16, measured):** step 3 below is wrong for about 22% of points. ART 1.20.1's
+> loop is `while |position| < len(path) - 1 or not found` and overwrites the result at every step,
+> so the search continues up to the ancestor two levels below the root and the **last** search wins
+> (it continues to the root only if that one fails). Over 1,517 attacked points (iris + wine, report
+> configuration) the adversarial example landed in that leaf 100% of the time; the first-found
+> (fewest-traversal) leaf matched only 77-78%. Script: `analysis/verify_dta_destination.py`.
+> Conclusions below that rest on "destinations are a property of the tree graph and its split
+> thresholds" still hold; do not describe DTA as finding the *nearest* wrong-class leaf.
+
 DTA never computes a Euclidean distance. From the ART source
 (`.venv/.../art/attacks/evasion/decision_tree_attack.py`):
 

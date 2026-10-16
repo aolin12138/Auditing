@@ -1,5 +1,21 @@
 # 02 — Background: Aiden's Prior Work
 
+> ⚠️ **Correction (2026-10-10).** Name: **Aidan Jared** (per git), not "Aiden".
+> His `audit_tree_bias` splits first (`aiden_original/util.py` line 187) and deletes from the
+> training fold only (lines 193–204), which is the **correct** protocol. The before-split
+> deletion error came from our July 2026 rebuild (`dtree_attack_experiment/run_experiment.py`
+> deletes at line 90, splits at 94). So limitation 3 below misreads his accuracy drop: under his
+> protocol it is honest behaviour, not a confound. It is still fair that his density change
+> co-moved with accuracy. See `report/HANDOFF.md` §4.
+
+> **Correction (2026-10-16, verified).** The distance bug did NOT only affect magnitude. At his last commit (f771f9a,
+> util.py:267) the pair distance is np.linalg.norm((p1, p2)) = sqrt(|p1|^2 + |p2|^2): it measures how far the two
+> points are from the ORIGIN, not how far apart they are (identical points: 12.10 instead of 0; a pair shifted 3 units
+> outward: 12.2 -> 20.3 with true distance unchanged). His density was therefore mainly a measure of the adversarial
+> cloud's location in raw iris units, not its spread, so "density ~ 1/spread" and "magnitude not direction" below are
+> wrong for his runs. His notebook also z-scored the values before plotting (eda_bias.ipynb cells 3 and 5), which is why a
+> ~3.5% change looked like a strong trend. Whether location explains his downward trend is plausible but unverified.
+
 ## What Aiden built
 
 A pipeline testing whether adversarial examples diagnose dataset quality, using
