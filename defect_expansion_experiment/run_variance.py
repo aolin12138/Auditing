@@ -43,6 +43,9 @@ inject_delete = _imb.inject_delete
 _os = importlib.util.spec_from_file_location('ol', HERE.parent / 'outlier_experiment' / 'run_experiment.py')
 _o = importlib.util.module_from_spec(_os); _os.loader.exec_module(_o)
 cluster_stats = _o.cluster_stats
+_ah = importlib.util.spec_from_file_location('ah', HERE / 'attack_all_helper.py')
+_a = importlib.util.module_from_spec(_ah); _ah.loader.exec_module(_a)
+attack_all, flips = _a.attack_all, _a.flips   # every test point attacked (2026-10-16 switch)
 
 # per-dataset config (tc = most contested class; feat = most class-discriminative), from run_variance probe
 CFG = {
@@ -55,7 +58,7 @@ PROTO = ['train_only', 'before_split']
 N_FOLDS = 5
 SEEDS = [42, 58, 125, 7, 13, 21, 99, 123, 200, 777] + list(range(300, 320))   # 30 seeds (tight CIs)
 COLS = ['dataset', 'model', 'attack', 'structure', 'protocol', 'tc', 'feat', 'frac', 'seed',
-        'tacc', 'vacc', 'min_recall', 'nadv', 'mean_dist']
+        'tacc', 'vacc', 'min_recall', 'nadv', 'mean_dist', 'nadv_correct', 'mean_dist_correct']
 
 
 def delete_full(X, y, tc, feat, frac, structure, rng):
@@ -111,17 +114,20 @@ def run_cell(dataset, structure, protocol, frac, seed):
         mmask = yv == tc
         min_recall = float((pv[mmask] == tc).mean()) if mmask.sum() else np.nan
         c = pv == yv
-        if c.sum():
-            adv = _attack(art, Xv[c], X.shape[1])
-            ap = np.argmax(art.predict(adv), axis=1); adv = adv[ap != yv[c]]
-            cls = yv[c][ap != yv[c]]
+        if MODEL == 'svm':
+            adv = _attack(art, Xv, X.shape[1])               # HSJ batch; every test point
+            flip = np.argmax(art.predict(adv), axis=1) != pv
         else:
-            adv = np.empty((0, X.shape[1]))
-            cls = np.empty(0, dtype=y.dtype)
+            adv, _ = attack_all(art, Xv)                     # DTA per point; every test point
+            flip = flips(art, adv, pv)
+        adv_c = adv[c & flip]                                # correct-only subset = old pipeline
+        adv, cls = adv[flip], yv[flip]
         if SAVE_CLOUDS:
             clouds.append((adv, cls))
         md = cluster_stats(adv)[2] if len(adv) else np.nan
-        folds.append(dict(tacc=tacc, vacc=vacc, min_recall=min_recall, nadv=len(adv), mean_dist=md))
+        md_c = cluster_stats(adv_c)[2] if len(adv_c) else np.nan
+        folds.append(dict(tacc=tacc, vacc=vacc, min_recall=min_recall, nadv=len(adv), mean_dist=md,
+                          nadv_correct=len(adv_c), mean_dist_correct=md_c))
     if SAVE_CLOUDS:
         d = CLOUDS / dataset / structure / protocol
         d.mkdir(parents=True, exist_ok=True)

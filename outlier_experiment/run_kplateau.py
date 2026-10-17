@@ -23,12 +23,15 @@ OUT = HERE / 'results_kplateau.parquet'
 _spec = importlib.util.spec_from_file_location('ol', HERE / 'run_experiment.py')
 _ol = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(_ol)
 inject_outliers, cluster_stats = _ol.inject_outliers, _ol.cluster_stats
+_ahs = importlib.util.spec_from_file_location('ah', HERE.parent / 'defect_expansion_experiment' / 'attack_all_helper.py')
+_ah = importlib.util.module_from_spec(_ahs); _ahs.loader.exec_module(_ah)
+attack_all, flips = _ah.attack_all, _ah.flips
 
 TC, N_OUT, DIR = 2, 10, 'toward'
 K_LEVELS = [6, 8, 10, 12, 14, 16, 20, 24]
 SEEDS = list(range(0, 50))
 MODELS = {'tree_d3': 3, 'tree_d10': 10}
-COLS = ['model', 'k', 'seed', 'tacc', 'vacc', 'nadv', 'mean_dist']
+COLS = ['model', 'k', 'seed', 'tacc', 'vacc', 'nadv', 'mean_dist', 'nadv_correct', 'mean_dist_correct']
 
 
 def run_cell(model, k, seed):
@@ -43,14 +46,13 @@ def run_cell(model, k, seed):
         m = DecisionTreeClassifier(max_depth=MODELS[model], random_state=42).fit(Xa, ya)
         art = SklearnClassifier(m); art.fit(Xa, yoh.transform(ya.reshape(-1, 1)))
         pv = np.argmax(art.predict(Xv), axis=1); c = pv == yv
-        if c.sum():
-            adv = DecisionTreeAttack(classifier=art).generate(Xv[c])
-            ap = np.argmax(art.predict(adv), axis=1)
-            adv = adv[ap != yv[c]]
-        else:
-            adv = np.empty((0, X.shape[1]))
-        md = cluster_stats(adv)[2] if len(adv) else np.nan
-        folds.append(dict(tacc=m.score(Xa, ya), vacc=float(c.mean()), nadv=len(adv), mean_dist=md))
+        adv, _ = attack_all(art, Xv)                      # every test point, model's own prediction
+        flip = flips(art, adv, pv)
+        adv_all, adv_c = adv[flip], adv[c & flip]         # correct-only subset = old pipeline
+        md = cluster_stats(adv_all)[2] if len(adv_all) else np.nan
+        md_c = cluster_stats(adv_c)[2] if len(adv_c) else np.nan
+        folds.append(dict(tacc=m.score(Xa, ya), vacc=float(c.mean()), nadv=len(adv_all),
+                          nadv_correct=len(adv_c), mean_dist=md, mean_dist_correct=md_c))
     r = {kk: float(np.nanmean([f[kk] for f in folds])) for kk in folds[0]}
     r.update(model=model, k=float(k), seed=int(seed))
     return r

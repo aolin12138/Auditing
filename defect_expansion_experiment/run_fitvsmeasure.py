@@ -50,6 +50,9 @@ inject_delete = _imb.inject_delete
 _os = importlib.util.spec_from_file_location('ol', HERE.parent / 'outlier_experiment' / 'run_experiment.py')
 _o = importlib.util.module_from_spec(_os); _os.loader.exec_module(_o)
 cluster_stats = _o.cluster_stats
+_ah = importlib.util.spec_from_file_location('ah', HERE / 'attack_all_helper.py')
+_a = importlib.util.module_from_spec(_ah); _ah.loader.exec_module(_a)
+attack_all, flips = _a.attack_all, _a.flips
 
 M_PAD = [0, 5, 10, 20, 50, 100]
 FRAC = [0.0, 0.5, 0.7, 0.85]
@@ -58,7 +61,8 @@ TC, FEAT, REAL = 2, 2, 4
 N_FOLDS = 5
 SEEDS = [42, 58, 125, 7, 13, 21, 99, 123, 200, 777] + list(range(300, 320))
 COLS = ['m', 'structure', 'frac', 'seed',
-        'spread_measure_full', 'spread_fit_full', 'spread_fit_real', 'disagree']
+        'spread_measure_full', 'spread_fit_full', 'spread_fit_real', 'disagree',
+        'spread_measure_full_correct', 'spread_fit_full_correct', 'spread_fit_real_correct']
 
 
 def pad_noise(X, m, seed):
@@ -68,18 +72,15 @@ def pad_noise(X, m, seed):
 
 
 def _fit_attack(Xt, yt, Xv, yv, yoh, cols):
-    """Fit an overfit tree on Xt[:, cols], attack the correctly-classified Xv, return (adv_real, pred_v)."""
+    """Fit an overfit tree on Xt[:, cols], attack EVERY Xv point.
+    Returns (adv_real, adv_real_correct, pred_v) in real-dim coordinates."""
     clf = DecisionTreeClassifier(max_depth=None, random_state=42).fit(Xt[:, cols], yt)
     art = SklearnClassifier(clf); art.fit(Xt[:, cols], yoh.transform(yt.reshape(-1, 1)))
     pv = np.argmax(art.predict(Xv[:, cols]), axis=1)
     c = pv == yv
-    if c.sum():
-        adv = DecisionTreeAttack(classifier=art).generate(Xv[c][:, cols])
-        ap = np.argmax(art.predict(adv), axis=1)
-        adv_real = adv[ap != yv[c]][:, :REAL]      # real-dim coords of successful adversarials
-    else:
-        adv_real = np.empty((0, REAL))
-    return adv_real, pv
+    adv, _ = attack_all(art, Xv[:, cols])
+    flip = flips(art, adv, pv)
+    return adv[flip][:, :REAL], adv[c & flip][:, :REAL], pv
 
 
 def run_cell(m, structure, frac, seed):
@@ -91,6 +92,7 @@ def run_cell(m, structure, frac, seed):
     skf = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=seed)
     rng = np.random.default_rng(seed)
     f_mf, f_ff, f_fr, f_dis = [], [], [], []
+    f_mfc, f_ffc, f_frc = [], [], []
     for tr, te in skf.split(X, y):
         Xt, Xv, yt, yv = X[tr], X[te], y[tr], y[te]
         Xa, ya = inject_delete(Xt, yt, TC, FEAT, frac, structure, rng)
@@ -99,21 +101,25 @@ def run_cell(m, structure, frac, seed):
         art = SklearnClassifier(clf); art.fit(Xa, yoh.transform(ya.reshape(-1, 1)))
         pv_full = np.argmax(art.predict(Xv), axis=1)
         c = pv_full == yv
-        if c.sum():
-            adv = DecisionTreeAttack(classifier=art).generate(Xv[c])
-            ap = np.argmax(art.predict(adv), axis=1); flip = ap != yv[c]
-            adv_full = adv[flip]
-        else:
-            adv_full = np.empty((0, X.shape[1]))
-        f_mf.append(cluster_stats(adv_full)[2] if len(adv_full) else np.nan)          # measure_full
-        f_ff.append(cluster_stats(adv_full[:, :REAL])[2] if len(adv_full) else np.nan)  # fit_full (oracle)
+        adv, _ = attack_all(art, Xv)                 # every test point, model's own prediction
+        flip = flips(art, adv, pv_full)
+        adv_full = adv[flip]
+        adv_full_c = adv[c & flip]                   # correct-only subset = old pipeline
+        f_mf.append(cluster_stats(adv_full)[2] if len(adv_full) else np.nan)            # measure_full
+        f_mfc.append(cluster_stats(adv_full_c)[2] if len(adv_full_c) else np.nan)
+        f_ff.append(cluster_stats(adv_full[:, :REAL])[2] if len(adv_full) else np.nan)    # fit_full (oracle)
+        f_ffc.append(cluster_stats(adv_full_c[:, :REAL])[2] if len(adv_full_c) else np.nan)
         # fit on real dims only (feature selection before fit)
-        adv_real, pv_real = _fit_attack(Xa, ya, Xv, yv, yoh, real_cols)
-        f_fr.append(cluster_stats(adv_real)[2] if len(adv_real) else np.nan)           # fit_real
-        f_dis.append(float((pv_full != pv_real).mean()))                               # fit disagreement
+        adv_real, adv_real_c, pv_real = _fit_attack(Xa, ya, Xv, yv, yoh, real_cols)
+        f_fr.append(cluster_stats(adv_real)[2] if len(adv_real) else np.nan)             # fit_real
+        f_frc.append(cluster_stats(adv_real_c)[2] if len(adv_real_c) else np.nan)        # old pipeline
+        f_dis.append(float((pv_full != pv_real).mean()))                                 # fit disagreement
     r = dict(m=int(m), structure=structure, frac=float(frac), seed=int(seed),
              spread_measure_full=float(np.nanmean(f_mf)), spread_fit_full=float(np.nanmean(f_ff)),
-             spread_fit_real=float(np.nanmean(f_fr)), disagree=float(np.nanmean(f_dis)))
+             spread_fit_real=float(np.nanmean(f_fr)), disagree=float(np.nanmean(f_dis)),
+             spread_measure_full_correct=float(np.nanmean(f_mfc)),
+             spread_fit_full_correct=float(np.nanmean(f_ffc)),
+             spread_fit_real_correct=float(np.nanmean(f_frc)))
     return r
 
 

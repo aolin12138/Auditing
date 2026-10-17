@@ -8,13 +8,18 @@ configuration so the defects can be compared like for like.
 
 Defect: a fraction `noise` of the TRAINING labels in each fold is flipped to a uniformly chosen
 different class (identical definition to dtree_attack_experiment.flip_labels). Test labels stay
-clean. Only test points the model classifies correctly (against clean labels) are attacked; only
-successful adversarial examples are kept; spread = mean within-cluster pairwise distance over
-OPTICS clusters (cluster_stats from ../outlier_experiment, as in every other grid).
+clean. EVERY test point is attacked from the model's own prediction (as in Aidan's original code;
+restricting the attack to correctly classified points would remove exactly the points a defect
+damages most and make defect and control arms measure different sets). Only candidates whose
+prediction changed are kept; spread = mean within-cluster pairwise distance over OPTICS clusters
+(cluster_stats from ../outlier_experiment, as in every other grid).
 
 Recorded per cell (5-fold mean): tacc (accuracy on the noisy training labels), tacc_clean
 (training accuracy against the true labels), vacc (clean test accuracy), worst_recall (lowest
-per-class test recall), nadv, mean_dist (spread).
+per-class test recall), nadv (all kept points), nadv_correct (subset the model classified
+correctly before the attack), mean_dist (spread over all kept points), mean_dist_correct
+(spread over the correct-only subset = the pre-switch pipeline; must equal the previous result
+file exactly for tree+DTA).
 
 -> results_label_noise.parquet (tree+DTA) / results_label_noise_svm.parquet (svm+HSJ)
 Usage: python run_label_noise.py [--model svm] [--smoke] [--nseeds N]
@@ -54,7 +59,8 @@ NOISE = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]   # same levels as th
 N_FOLDS = 5
 SEEDS = [42, 58, 125, 7, 13, 21, 99, 123, 200, 777] + list(range(300, 320))   # the body's 30 seeds
 COLS = ['dataset', 'model', 'attack', 'noise', 'seed',
-        'tacc', 'tacc_clean', 'vacc', 'worst_recall', 'nadv', 'attack_err', 'mean_dist']
+        'tacc', 'tacc_clean', 'vacc', 'worst_recall', 'nadv', 'nadv_correct', 'attack_err',
+        'mean_dist', 'mean_dist_correct']
 
 
 def flip_labels(y_train, noise_level, rng):
@@ -104,16 +110,15 @@ def run_cell(dataset, noise, seed):
         pv = np.argmax(art.predict(Xv), axis=1)
         recalls = [float((pv[yv == k] == k).mean()) for k in np.unique(yv)]
         c = pv == yv
-        err = 0
-        if c.sum():
-            adv, err = _attack(art, Xv[c])
-            adv = adv[np.argmax(art.predict(adv), axis=1) != yv[c]]
-        else:
-            adv = np.empty((0, X.shape[1]))
+        adv, err = _attack(art, Xv)                          # every test point, model's own prediction
+        flips = np.argmax(art.predict(adv), axis=1) != pv
+        adv, adv_c = adv[flips], adv[c & flips]              # correct-only subset = old pipeline
         md = cluster_stats(adv)[2] if len(adv) else np.nan
+        md_c = cluster_stats(adv_c)[2] if len(adv_c) else np.nan
         folds.append(dict(tacc=float((pt == ytn).mean()), tacc_clean=float((pt == yt).mean()),
-                          vacc=float(c.mean()), worst_recall=min(recalls), nadv=len(adv), attack_err=err,
-                          mean_dist=md))
+                          vacc=float(c.mean()), worst_recall=min(recalls), nadv=len(adv),
+                          nadv_correct=len(adv_c), attack_err=err,
+                          mean_dist=md, mean_dist_correct=md_c))
     r = {k: float(np.nanmean([f[k] for f in folds])) for k in folds[0]}
     r.update(dataset=dataset, model=MODEL, attack=ATTACK, noise=float(noise), seed=int(seed))
     return r
@@ -126,7 +131,8 @@ def main():
             t0 = time.time(); r = run_cell(ds, nz, 42)
             print(f'  smoke {MODEL}+{ATTACK} {ds} noise={nz}: {time.time()-t0:.1f}s tacc={r["tacc"]:.3f} '
                   f'tacc_clean={r["tacc_clean"]:.3f} vacc={r["vacc"]:.3f} worst_recall={r["worst_recall"]:.3f} '
-                  f'nadv={r["nadv"]:.1f} spread={r["mean_dist"]:.3f}', flush=True)
+                  f'nadv={r["nadv"]:.1f} nadv_c={r["nadv_correct"]:.1f} spread={r["mean_dist"]:.3f} '
+                  f'spread_corr={r["mean_dist_correct"]:.3f}', flush=True)
         return
     if '--nseeds' in sys.argv:
         SEEDS = SEEDS[:int(sys.argv[sys.argv.index('--nseeds') + 1])]

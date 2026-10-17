@@ -40,6 +40,9 @@ OUT = HERE / 'results_wine_h4.parquet'
 _os = importlib.util.spec_from_file_location('ol', HERE.parent / 'outlier_experiment' / 'run_experiment.py')
 _o = importlib.util.module_from_spec(_os); _os.loader.exec_module(_o)
 cluster_stats = _o.cluster_stats
+_ah = importlib.util.spec_from_file_location('ah', HERE / 'attack_all_helper.py')
+_a = importlib.util.module_from_spec(_ah); _ah.loader.exec_module(_a)
+attack_all, flips = _a.attack_all, _a.flips
 
 # per-dataset contested target class (from run_variance probe)
 CFG = {'wine': dict(load=load_wine, tc=0), 'iris': dict(load=load_iris, tc=2)}
@@ -49,7 +52,7 @@ STRUCT = ['random', 'spatial']
 N_FOLDS = 5
 SEEDS = [42, 58, 125, 7, 13, 21, 99, 123, 200, 777] + list(range(300, 320))
 COLS = ['dataset', 'k', 'structure', 'frac', 'seed', 'top_feat', 'tacc', 'vacc', 'min_recall',
-        'nadv', 'mean_dist']
+        'nadv', 'mean_dist', 'nadv_correct', 'mean_dist_correct']
 
 
 def top_features(X, y, k):
@@ -98,13 +101,13 @@ def run_cell(dataset, k, structure, frac, seed):
         mmask = yv == tc
         min_recall = float((pv[mmask] == tc).mean()) if mmask.sum() else np.nan
         c = pv == yv
-        if c.sum():
-            adv = DecisionTreeAttack(classifier=art).generate(Xv[c])
-            ap = np.argmax(art.predict(adv), axis=1); adv = adv[ap != yv[c]]
-        else:
-            adv = np.empty((0, k))
-        md = cluster_stats(adv)[2] if len(adv) else np.nan
-        folds.append(dict(tacc=tacc, vacc=vacc, min_recall=min_recall, nadv=len(adv), mean_dist=md))
+        adv, _ = attack_all(art, Xv)                     # every test point, model's own prediction
+        flip = flips(art, adv, pv)
+        adv_all, adv_c = adv[flip], adv[c & flip]        # correct-only subset = old pipeline
+        md = cluster_stats(adv_all)[2] if len(adv_all) else np.nan
+        md_c = cluster_stats(adv_c)[2] if len(adv_c) else np.nan
+        folds.append(dict(tacc=tacc, vacc=vacc, min_recall=min_recall, nadv=len(adv_all),
+                          nadv_correct=len(adv_c), mean_dist=md, mean_dist_correct=md_c))
     r = {kk: float(np.nanmean([f[kk] for f in folds])) for kk in folds[0]}
     r.update(dataset=dataset, k=int(k), structure=structure, frac=float(frac), seed=int(seed),
              top_feat=int(cols[0]))

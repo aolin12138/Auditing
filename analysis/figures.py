@@ -17,6 +17,13 @@ Fig 5           fig_dimensionality   defect_expansion_experiment/results_fitvsme
 Table 2         table_design         seed counts and levels read from every grid listed in the table
 Table 3         table_panel          results_variance, results_label_noise, outlier_experiment/results_kplateau
                                      (+_baseline), results_shortcut, results_leakage (tree + white-box only)
+Table A1        table_scorecard      results_variance(_svm), results_p1(_rf) [earlier pipeline], results_attack_all
+Table A2        table_sensitivity    same files: every-point columns vs the *_correct columns
+
+Probe (2026-10-16 switch): every test point is attacked from the model's own prediction and points
+whose prediction changed are kept. The all-points values keep the old column names (mean_dist,
+spread_m0, spur_frac, ...); the earlier correct-only probe is in the *_correct columns of the same
+files (tree: identical to the pre-switch files, verified row by row) and is shown only in Table A2.
 
 Usage:  .venv/Scripts/python.exe analysis/figures.py            # build everything
         .venv/Scripts/python.exe analysis/figures.py fig_coverage_gap table_protocol
@@ -180,16 +187,19 @@ def fig_blind_spots():
                 d, lo, hi, _, _ = d_with_ci(sign * a, sign * b)
                 xs.append(nz * 100); ds_.append(d); los.append(lo); his.append(hi)
             ax.plot(xs, ds_, ls, marker="o", ms=3, color=col)
-            ax.fill_between(xs, np.clip(los, 0.1, None), his, color=col, alpha=0.15, lw=0)
-    ax.set_yscale("log")
-    ax.set_ylim(0.1, 80)
+            ax.fill_between(xs, los, his, color=col, alpha=0.15, lw=0)
+    # symmetric log: spread d sits near 0 (and can be negative) while the accuracy drop reaches ~40
+    ax.set_yscale("symlog", linthresh=1)
+    ax.set_ylim(-1.5, 3000)                     # headroom above the curves for the legend
+    ax.set_yticks([-1, 0, 1, 10, 100]); ax.set_yticklabels(["$-1$", "0", "1", "10", "100"])
+    ax.axhline(0, color="0.4", lw=0.8, ls=":")
     ax.set_title("(b) Label noise: effect size vs clean")
     ax.set_xlabel("Training labels flipped (%)")
-    ax.set_ylabel("Cohen's $d$ (log scale)")
-    ax.plot([], [], "-", color=C_SPATIAL, label="Spread rise")
+    ax.set_ylabel("Cohen's $d$ (symmetric log)")
+    ax.plot([], [], "-", color=C_SPATIAL, label="Spread change")
     ax.plot([], [], "-", color=C_RANDOM, label="Accuracy drop")
     ax.plot([], [], "k-", label="iris"); ax.plot([], [], "k--", label="wine")
-    ax.legend(loc="lower right", frameon=False, handlelength=1.6, ncol=2, columnspacing=0.8)
+    ax.legend(loc="upper left", frameon=False, handlelength=1.6, ncol=2, columnspacing=0.8)
 
     # (c, d) leakage: measured vs honest accuracy; adversarial margin of leaked vs clean points
     lk = pd.read_parquet(DEX / "results_leakage.parquet")
@@ -340,7 +350,7 @@ def _cell(a, b):
     d, lo, hi, na, nb = d_with_ci(a, b)
     if not np.isfinite(d):
         return "--", None
-    txt = f"{d:+.1f}".replace("-", "$-$")
+    txt = ("0.0" if abs(d) < 0.05 else f"{d:+.1f}").replace("-", "$-$")   # no "-0.0"
     return (f"\\textbf{{{txt}}}" if (lo > 0 or hi < 0) else txt), (d, lo, hi, na, nb)
 
 
@@ -462,30 +472,86 @@ def table_scorecard():
         return out
     v, vs = _variance(), pd.read_parquet(DEX / "results_variance_svm.parquet")
     p1, rf = pd.read_parquet(DEX / "results_p1.parquet"), pd.read_parquet(DEX / "results_p1_rf.parquet")
-    imb = pd.read_parquet(DEX / "results_imbalance.parquet")
+    aa = pd.read_parquet(DEX / "results_attack_all.parquet")
+    plen = aa[aa.dataset == "iris_plen"].rename(columns={"spread_all": "mean_dist"})
     rows = []
     for ds in ("iris", "wine"):
         tc = CONTESTED[ds]["tc"]
         for df, lab in ((v, "tree + white-box"), (vs, "SVM + black-box")):
             sub = df[(df.protocol == "train_only") & (df.dataset == ds) & ((df.tc == tc) | np.isclose(df.frac, 0))]
             rows += block(f"{ds}, {lab}", sub, [0.6, 0.8, 0.9]) + [r"\addlinespace"]
-    for model, lab in (("tree", "tree + black-box"),):
+    rows += block("iris, tree + white-box, petal length$^{\dagger}$", plen, [0.6, 0.8, 0.9]) + [r"\addlinespace"]
+    for model, lab in (("tree", "tree + black-box$^{\ddagger}$"),):
         sub = p1[(p1.model == model) & ((p1.tc == 2) | (p1.structure == "baseline"))]
         rows += block(f"iris, {lab}", sub, [0.5, 0.85, 0.95]) + [r"\addlinespace"]
-    rows += block("iris, forest + black-box", rf[(rf.tc == 2) | (rf.structure == "baseline")], [0.5, 0.85, 0.95])
-    rows += [r"\addlinespace"] + block("iris, tree + white-box, petal length$^{\dagger}$", imb, [0.5, 0.85, 0.95])
+    rows += block("iris, forest + black-box$^{\ddagger}$", rf[(rf.tc == 2) | (rf.structure == "baseline")], [0.5, 0.85, 0.95])
     tex = [r"\begin{tabular}{p{0.25\linewidth}cccc}", r"\toprule",
            r"Setting & Deleted & Runs & Spread / clean & $d$ [95\% CI] \\",
            r" & & s / r & s / r & s vs r \\", r"\midrule"] + rows + [
            r"\bottomrule", r"\end{tabular}", r"\par\smallskip",
            r"{\footnotesize s: spatial hole; r: random deletion of the same count. $^{*}$CI excludes 0. $d$ is reported only when both arms have at least 5 valid runs. $^{\dagger}$Unstandardised iris, hole cut along petal length (the other rows use "
-           r"petal width). Black-box tree: 10 seeds; forest: 3 seeds; other rows: 30 seeds.\par}"]
+           r"petal width). $^{\ddagger}$Earlier pipeline: only correctly classified test points attacked; black-box tree 10 seeds, forest 3 seeds. Other rows: every test point attacked, 30 seeds.\par}"]
     (TAB / "scorecard.tex").write_text("\n".join(tex) + "\n", encoding="utf-8")
     print("  wrote report/tables/scorecard.tex")
 
 
+# ------------------------------------------------------------------------------------------
+# Table A2 - probe sensitivity (Appendix A): every body comparison under the every-point probe and
+# under the earlier correct-only probe, from the SAME runs (the *_correct columns). Tree + white-box.
+# ------------------------------------------------------------------------------------------
+def table_sensitivity():
+    v = _variance(); v = v[v.protocol == "train_only"]
+    ln = pd.read_parquet(DEX / "results_label_noise.parquet")
+    sc = pd.read_parquet(DEX / "results_shortcut.parquet")
+    lk = pd.read_parquet(DEX / "results_leakage.parquet")
+    kp = pd.read_parquet(ROOT / "outlier_experiment" / "results_kplateau.parquet")
+    kb = pd.read_parquet(ROOT / "outlier_experiment" / "results_kplateau_baseline.parquet")
+    log = []
+
+    def pair(name, ds, a_all, b_all, a_cor, b_cor):
+        out = []
+        for probe, a, b in (("every point", a_all, b_all), ("correct only", a_cor, b_cor)):
+            txt, st = _cell(a, b); out.append(txt)
+            if st: log.append((name, ds, probe) + st)
+        return out
+
+    rows = []
+    def add(name, dose, per_ds):
+        cells = []
+        for ds in ("iris", "wine"):
+            cells += pair(name, ds, *per_ds[ds]) if ds in per_ds else ["--", "--"]
+        rows.append(f"{name} & {dose} & " + " & ".join(cells) + r"\\")
+
+    def var_pair(ds, frac):
+        s = v[(v.dataset == ds) & (v.tc == CONTESTED[ds]["tc"]) & np.isclose(v.frac, frac)]
+        sp, rd = s[s.structure == "spatial"], s[s.structure == "random"]
+        return sp.mean_dist, rd.mean_dist, sp.mean_dist_correct, rd.mean_dist_correct
+    for frac in (0.4, 0.6, 0.9):
+        add("Coverage gap", f"{int(frac * 100)}\\%", {ds: var_pair(ds, frac) for ds in ("iris", "wine")})
+    def vs_clean(df, key, col, dose, clean):
+        a, b = df[(df.dataset == key) & dose], df[(df.dataset == key) & clean]
+        return a[col], b[col], a[col + "_correct"], b[col + "_correct"]
+    add("Label noise, spread", r"20\%", {ds: vs_clean(ln, ds, "mean_dist", np.isclose(ln.noise, 0.2), ln.noise == 0) for ds in ("iris", "wine")})
+    k8, b = kp[(kp.model == "tree_d10") & (kp.k == 8)], kb[kb.model == "tree_d10"]
+    add("Outlier, spread", r"$k=8$", {"iris": (k8.mean_dist, b.mean_dist, k8.mean_dist_correct, b.mean_dist_correct)})
+    add("Shortcut, per-axis", "strength 2", {ds: vs_clean(sc, ds, "spur_frac", sc["corr"] == 2, sc["corr"] == 0) for ds in ("iris", "wine")})
+    add("Shortcut, per-axis", "strength 1", {ds: vs_clean(sc, ds, "spur_frac", sc["corr"] == 1, sc["corr"] == 0) for ds in ("iris", "wine")})
+    add("Leakage, spread", "10 points", {ds: vs_clean(lk, ds, "spread_m0", lk.n_leak == 10, lk.n_leak == 0) for ds in ("iris", "wine")})
+    tex = [r"\begin{tabular}{p{0.24\linewidth}ccccc}", r"\toprule",
+           r" & & \multicolumn{2}{c}{Iris} & \multicolumn{2}{c}{Wine} \\",
+           r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}",
+           r"Comparison & Dose & Every point & Correct only & Every point & Correct only \\", r"\midrule"] + rows + [
+           r"\bottomrule", r"\end{tabular}", r"\par\smallskip",
+           r"{\footnotesize Cohen's $d$; bold: 95\% bootstrap CI excludes 0. Coverage gap: spatial hole vs random deletion of the same count; other rows: defect vs defect-free. Both probes are computed from the same adversarial examples in each run; overfit tree, white-box attack, 30 seeds (outlier: 50).\par}"]
+    (TAB / "sensitivity.tex").write_text("\n".join(tex) + "\n", encoding="utf-8")
+    pd.DataFrame(log, columns=["comparison", "dataset", "probe", "d", "lo", "hi", "n_a", "n_b"]).to_csv(
+        ROOT / "analysis" / "sensitivity_table_values.csv", index=False)
+    print("  wrote report/tables/sensitivity.tex (+ analysis/sensitivity_table_values.csv)")
+
+
 ITEMS = {f.__name__: f for f in (table_protocol, table_design, fig_coverage_gap, fig_blind_spots,
-                                    fig_shortcut, fig_dimensionality, table_panel, table_scorecard)}
+                                    fig_shortcut, fig_dimensionality, table_panel, table_scorecard,
+                                    table_sensitivity)}
 
 if __name__ == "__main__":
     for name in (sys.argv[1:] or ITEMS):

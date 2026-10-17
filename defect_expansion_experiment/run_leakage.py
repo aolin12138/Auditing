@@ -13,7 +13,8 @@ Per cell (fold-mean) we record:
   vacc_clean      accuracy on the non-leaked test points only   — the honest accuracy (flat)
   vacc_leak       accuracy on the leaked points (~1.0, memorized)
   margin_leak     mean adversarial L2 perturbation for LEAKED points  — H1: memorization locality
-  margin_clean    same for CLEAN correctly-classified test points
+  margin_clean    same for CLEAN test points (every point attacked; *_correct = old pipeline's
+                  correctly-classified-only subset, kept as a sensitivity check)
   locden_leak     mean kNN distance (k=3) in the adv cloud for leaked-origin points (local spread)
   locden_clean    same for clean-origin points
   spread_m0       global OPTICS spread (reference — leakage is LOCAL, so this should be flat)
@@ -46,11 +47,16 @@ JITTER = 0.0                      # Phase 0: exact copies (cleanest test)
 N_FOLDS = 5
 SEEDS = [42, 58, 125, 7, 13, 21, 99, 123, 200, 777] + list(range(300, 320))   # 30 seeds
 COLS = ['dataset', 'n_leak', 'seed', 'vacc', 'vacc_clean', 'vacc_leak', 'nadv', 'nleak_adv',
-        'margin_leak', 'margin_clean', 'locden_leak', 'locden_clean', 'spread_m0']
+        'margin_leak', 'margin_clean', 'locden_leak', 'locden_clean', 'spread_m0',
+        'nadv_correct', 'margin_leak_correct', 'margin_clean_correct', 'locden_leak_correct',
+        'locden_clean_correct', 'spread_m0_correct']
 
 _os = importlib.util.spec_from_file_location('ol', HERE.parent / 'outlier_experiment' / 'run_experiment.py')
 _o = importlib.util.module_from_spec(_os); _os.loader.exec_module(_o)
 cluster_stats = _o.cluster_stats
+_ah = importlib.util.spec_from_file_location('ah', HERE / 'attack_all_helper.py')
+_a = importlib.util.module_from_spec(_ah); _ah.loader.exec_module(_a)
+attack_all, flips = _a.attack_all, _a.flips
 
 
 def _knn_dist(points, k=3):
@@ -85,24 +91,30 @@ def run_cell(dataset, n_leak, seed):
         vacc_clean = float((pv[~leaked] == yv[~leaked]).mean()) if (~leaked).any() else np.nan
         vacc_leak = float((pv[leaked] == yv[leaked]).mean()) if leaked.any() else np.nan
         c = pv == yv
-        if c.sum():
-            x0 = Xv[c]; leak_c = leaked[c]
-            adv = DecisionTreeAttack(classifier=art).generate(x0)
-            ap = np.argmax(art.predict(adv), axis=1); flip = ap != yv[c]
-            adv = adv[flip]; x0 = x0[flip]; leak_f = leak_c[flip]
-            margins = np.linalg.norm(adv - x0, axis=1)
-            m_leak = float(margins[leak_f].mean()) if leak_f.any() else np.nan
-            m_clean = float(margins[~leak_f].mean()) if (~leak_f).any() else np.nan
-            kd = _knn_dist(adv, k=3)
-            ld_leak = float(np.nanmean(kd[leak_f])) if leak_f.any() else np.nan
-            ld_clean = float(np.nanmean(kd[~leak_f])) if (~leak_f).any() else np.nan
-            sp = cluster_stats(adv)[2] if len(adv) else np.nan
-            nadv, nleak_adv = len(adv), int(leak_f.sum())
-        else:
-            m_leak = m_clean = ld_leak = ld_clean = sp = np.nan; nadv = nleak_adv = 0
-        folds.append(dict(vacc=vacc, vacc_clean=vacc_clean, vacc_leak=vacc_leak, nadv=nadv,
-                          nleak_adv=nleak_adv, margin_leak=m_leak, margin_clean=m_clean,
-                          locden_leak=ld_leak, locden_clean=ld_clean, spread_m0=sp))
+        adv, _ = attack_all(art, Xv)                       # every test point, model's own prediction
+        flip = flips(art, adv, pv)
+        adv_all, x0_all = adv[flip], Xv[flip]
+        adv_c, x0_c = adv[c & flip], Xv[c & flip]          # correct-only subset = old pipeline
+        leak_all, leak_cf = leaked[flip], leaked[c & flip]
+        out = {}
+        for tag, a, x, lf in (('', adv_all, x0_all, leak_all), ('_correct', adv_c, x0_c, leak_cf)):
+            if len(a):
+                margins = np.linalg.norm(a - x, axis=1)
+                m_leak = float(margins[lf].mean()) if lf.any() else np.nan
+                m_clean = float(margins[~lf].mean()) if (~lf).any() else np.nan
+                kd = _knn_dist(a, k=3)
+                ld_leak = float(np.nanmean(kd[lf])) if lf.any() else np.nan
+                ld_clean = float(np.nanmean(kd[~lf])) if (~lf).any() else np.nan
+            else:
+                m_leak = m_clean = ld_leak = ld_clean = np.nan
+            out['margin_leak' + tag] = m_leak
+            out['margin_clean' + tag] = m_clean
+            out['locden_leak' + tag] = ld_leak
+            out['locden_clean' + tag] = ld_clean
+            out['spread_m0' + tag] = cluster_stats(a)[2] if len(a) else np.nan
+            out['nadv' + tag] = len(a)
+        out['nleak_adv'] = int(leak_all.sum())
+        folds.append(dict(vacc=vacc, vacc_clean=vacc_clean, vacc_leak=vacc_leak, **out))
     r = {k: float(np.nanmean([f[k] for f in folds])) for k in folds[0]}
     r.update(dataset=dataset, n_leak=int(n_leak), seed=int(seed))
     return r

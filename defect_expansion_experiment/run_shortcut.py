@@ -45,7 +45,8 @@ N_FOLDS = 5
 SEEDS = [42, 58, 125, 7, 13, 21, 99, 123, 200, 777] + list(range(300, 320))   # 30 seeds
 SPUR_IDX = 4                       # appended feature index (iris: 4; wine: 13 — set per cell)
 COLS = ['dataset', 'corr', 'seed', 'tacc', 'vacc', 'nsp_splits', 'spur_depth', 'nadv', 'adv_l2',
-        'spur_frac', 'spread_m0', 'spread_m4']
+        'spur_frac', 'spread_m0', 'spread_m4', 'nadv_correct', 'adv_l2_correct', 'spur_frac_correct',
+        'spread_m0_correct', 'spread_m4_correct']
 
 _os = importlib.util.spec_from_file_location('ol', HERE.parent / 'outlier_experiment' / 'run_experiment.py')
 _o = importlib.util.module_from_spec(_os); _os.loader.exec_module(_o)
@@ -53,6 +54,9 @@ cluster_stats = _o.cluster_stats
 _rm = importlib.util.spec_from_file_location('rm', HERE / 'run_robust_metric.py')
 _r = importlib.util.module_from_spec(_rm); _rm.loader.exec_module(_r)
 m4_knn_local = _r.m4_knn_local
+_ah = importlib.util.spec_from_file_location('ah', HERE / 'attack_all_helper.py')
+_a = importlib.util.module_from_spec(_ah); _ah.loader.exec_module(_a)
+attack_all, flips = _a.attack_all, _a.flips
 
 
 def _fit(Xt, yt, yoh):
@@ -111,27 +115,29 @@ def run_cell(dataset, corr, seed):
                         stack.append((m0.tree_.children_right[n], d + 1))
                 spur_depth = float(dep[m0.tree_.feature == spur].min())   # depth of FIRST spurious split (root=0)
         c = pv == yv
-        if c.sum():
-            x0 = Xv[c]
-            adv = _attack(art, x0)
-            ap = np.argmax(art.predict(adv), axis=1)
-            flip = ap != yv[c]
-            adv = adv[flip]; x0 = x0[flip]
+        if MODEL == 'svm':
+            adv = _attack(art, Xv)                       # HSJ batch; every test point
+            flip = np.argmax(art.predict(adv), axis=1) != pv
         else:
-            adv = np.empty((0, d + 1))
-        if len(adv):
-            dx = adv - x0
-            l2 = np.linalg.norm(dx, axis=1)
-            nz = l2 > 1e-12
-            fracs = (dx[:, spur] ** 2)[nz] / (l2[nz] ** 2)
-            adv_l2 = float(np.mean(l2)); spur_frac = float(np.mean(fracs)) if len(fracs) else np.nan
-        else:
-            adv_l2 = spur_frac = np.nan
-        folds.append(dict(tacc=tacc, vacc=vacc, nsp_splits=nsp, spur_depth=spur_depth, nadv=len(adv),
-                          adv_l2=adv_l2,
-                          spur_frac=spur_frac,
-                          spread_m0=cluster_stats(adv)[2] if len(adv) else np.nan,
-                          spread_m4=m4_knn_local(adv) if len(adv) else np.nan))
+            adv, _ = attack_all(art, Xv)                 # DTA per point; every test point
+            flip = flips(art, adv, pv)
+        adv_all, x0_all = adv[flip], Xv[flip]
+        adv_c, x0_c = adv[c & flip], Xv[c & flip]        # correct-only subset = old pipeline
+        out = {}
+        for tag, a, x in (('', adv_all, x0_all), ('_correct', adv_c, x0_c)):
+            if len(a):
+                dx = a - x
+                l2 = np.linalg.norm(dx, axis=1)
+                nz = l2 > 1e-12
+                fracs = (dx[:, spur] ** 2)[nz] / (l2[nz] ** 2)
+                out['adv_l2' + tag] = float(np.mean(l2))
+                out['spur_frac' + tag] = float(np.mean(fracs)) if len(fracs) else np.nan
+            else:
+                out['adv_l2' + tag] = out['spur_frac' + tag] = np.nan
+            out['nadv' + tag] = len(a)
+            out['spread_m0' + tag] = cluster_stats(a)[2] if len(a) else np.nan
+            out['spread_m4' + tag] = m4_knn_local(a) if len(a) else np.nan
+        folds.append(dict(tacc=tacc, vacc=vacc, nsp_splits=nsp, spur_depth=spur_depth, **out))
     r = {k: float(np.nanmean([f[k] for f in folds])) for k in folds[0]}
     r.update(dataset=dataset, corr=float(corr), seed=int(seed))
     return r
@@ -145,7 +151,8 @@ def main():
         for ds in CFG:
             t0 = time.time(); r = run_cell(ds, 2.0, 42)
             print(f'  smoke {ds} corr=2: {time.time()-t0:.1f}s vacc={r["vacc"]:.3f} '
-                  f'nsp={r["nsp_splits"]:.0f} spur_frac={r["spur_frac"]:.3f} nadv={r["nadv"]:.0f}', flush=True)
+                  f'nsp={r["nsp_splits"]:.0f} spur_frac={r["spur_frac"]:.3f} nadv={r["nadv"]:.0f} '
+                  f'spur_frac_corr={r["spur_frac_correct"]:.3f}', flush=True)
         return
     rows, t0 = [], time.time()
     grid = list(product(CFG, CORR, SEEDS))

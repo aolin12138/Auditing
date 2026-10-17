@@ -56,15 +56,99 @@ for ds in ("iris", "wine"):
         x = vs[(vs.dataset == ds) & (vs.tc == TC[ds]) & np.isclose(vs.frac, frac)]
         dval(f"cg.svm.{ds}.{int(frac*100)}.d_spread_sp_vs_rd", x[x.structure == "spatial"].mean_dist,
              x[x.structure == "random"].mean_dist, "results_variance_svm")
+# a second, independent run of the same SVM + HopSkipJump configuration (run_attack_all.py --model svm):
+# HopSkipJump is unseeded in ART 1.20.1, so the two runs differ
+aas = pd.read_parquet(DEX / "results_attack_all_svm.parquet")
+for ds in ("iris", "wine"):
+    for frac in (0.6, 0.8, 0.9):
+        x = aas[(aas.dataset == ds) & np.isclose(aas.frac, frac)]
+        dval(f"cg.svm_run2.{ds}.{int(frac*100)}.d_spread_sp_vs_rd", x[x.structure == "spatial"].spread_all,
+             x[x.structure == "random"].spread_all, "results_attack_all_svm")
 # run-to-run variation of HopSkipJump (Discussion 5.5): wine, 80% deletion, mean spatial-minus-random
-# spread on the 15 seeds of the original (archived) grid vs the same seeds in the 2026-10-15 rerun
+# spread on the 15 seeds of the original (archived) grid vs the same seeds in the 2026-10-15 rerun.
+# Both files use the earlier correct-only probe, so the comparison isolates the attack's randomness.
 snap = pd.read_parquet(ROOT / "results_archive" / "pre-rerun-2026-10-15" / "defect_expansion_experiment"
                        / "results_variance_svm.parquet")
 snap = snap[snap.protocol == "train_only"]
-for lab, df in (("original", snap), ("rerun_same15", vs[vs.seed.isin(snap.seed.unique())])):
+rr = pd.read_parquet(ROOT / "rerun" / "2026-10-15" / "defect_expansion_experiment" / "results_variance_svm.parquet")
+rr = rr[rr.protocol == "train_only"]
+for lab, df in (("original", snap), ("rerun_same15", rr[rr.seed.isin(snap.seed.unique())])):
     x = df[(df.dataset == "wine") & (df.tc == 0) & np.isclose(df.frac, 0.8)]
     gap = (x[x.structure == "spatial"].set_index("seed").mean_dist - x[x.structure == "random"].set_index("seed").mean_dist)
     mean_ci(f"hsj_rerun.wine.80.gap.{lab}", gap, "results_variance_svm (archive vs rerun)")
+
+# recall vs spread in the same runs (tree + DTA): hole vs random and hole vs defect-free, and the
+# number of adversarial examples per fold (every test point attacked; prediction changed)
+for ds in ("iris", "wine"):
+    s = v[(v.dataset == ds) & ((v.tc == TC[ds]) | np.isclose(v.frac, 0))]
+    base = s[np.isclose(s.frac, 0)]
+    mean_ci(f"cg.{ds}.clean.nadv", base.nadv, "results_variance")
+    for frac in (0.4, 0.6, 0.8, 0.9):
+        x = s[np.isclose(s.frac, frac)]
+        sp, rd = x[x.structure == "spatial"], x[x.structure == "random"]
+        dval(f"cg.{ds}.{int(frac*100)}.d_recall_rd_vs_sp", rd.min_recall, sp.min_recall, "results_variance")
+        dval(f"cg.{ds}.{int(frac*100)}.d_spread_sp_vs_clean", sp.mean_dist, base.mean_dist, "results_variance")
+        dval(f"cg.{ds}.{int(frac*100)}.d_recall_clean_vs_sp", base.min_recall, sp.min_recall, "results_variance")
+        dval(f"cg.{ds}.{int(frac*100)}.d_spread_sp_vs_rd.correct_only", sp.mean_dist_correct, rd.mean_dist_correct,
+             "results_variance (*_correct)")
+        mean_ci(f"cg.{ds}.spatial.{int(frac*100)}.nadv", sp.nadv, "results_variance")
+        mean_ci(f"cg.{ds}.spatial.{int(frac*100)}.nadv_correct", sp.nadv_correct, "results_variance")
+        # paired per seed: (hole - random) spread, in units of the defect-free spread
+        g = (sp.set_index("seed").mean_dist - rd.set_index("seed").mean_dist) / base.mean_dist.mean()
+        mean_ci(f"cg.{ds}.{int(frac*100)}.paired_gap_ratio", g, "results_variance")
+
+# hole cut along petal length (unstandardised iris; Johnson's setting) - every point attacked
+aa = pd.read_parquet(DEX / "results_attack_all.parquet")
+pl_ = aa[aa.dataset == "iris_plen"]
+pb = pl_[np.isclose(pl_.frac, 0)]
+for frac in (0.4, 0.6, 0.8, 0.9):
+    x = pl_[np.isclose(pl_.frac, frac)]
+    sp, rd = x[x.structure == "spatial"], x[x.structure == "random"]
+    dval(f"plen.{int(frac*100)}.d_spread_sp_vs_rd", sp.spread_all, rd.spread_all, "results_attack_all (iris_plen)")
+    dval(f"plen.{int(frac*100)}.d_recall_rd_vs_sp", rd.min_recall, sp.min_recall, "results_attack_all (iris_plen)")
+    mean_ci(f"plen.spatial.{int(frac*100)}.recall", sp.min_recall, "results_attack_all (iris_plen)")
+    mean_ci(f"plen.random.{int(frac*100)}.recall", rd.min_recall, "results_attack_all (iris_plen)")
+    mean_ci(f"plen.spatial.{int(frac*100)}.spread_ratio", sp.spread_all / pb.spread_all.mean(), "results_attack_all (iris_plen)")
+    mean_ci(f"plen.random.{int(frac*100)}.spread_ratio", rd.spread_all / pb.spread_all.mean(), "results_attack_all (iris_plen)")
+
+# Johnson Zhang's fixed-cohort check (his branch experiments/negative-controls, robustness_cohort.csv):
+# iris, hole along petal length, raw features, tree + DTA; spread measured on the test points that are
+# correctly classified in EVERY arm of a seed, so all arms measure the same points
+import io, subprocess  # noqa: E402
+# Joint cohort = test points correctly classified by EVERY (structure, severity) model of a fold. Files are
+# wide (one row per seed). Ratios use the mean defect-free spread as base, as in his robustness_tree_moderate.py.
+try:
+    for fname, tag in (("robustness_joint_cohort_moderate", "moderate"), ("robustness_joint_cohort", "high")):
+        src = f"johnson/negative-controls:{fname}.csv"
+        jz = pd.read_csv(io.StringIO(subprocess.run(
+            ["git", "show", f"johnson/negative-controls:defect_expansion_experiment/{fname}.csv"],
+            cwd=ROOT, capture_output=True, text=True, check=True).stdout))
+        base = jz["random_0.0"].mean()
+        for f in sorted({c.split("_")[1] for c in jz.columns if c.startswith("spatial_")}, key=float):
+            sp, rd = jz[f"spatial_{f}"] / base, jz[f"random_{f}"] / base
+            pct = int(round(float(f) * 100))
+            mean_ci(f"jz.{tag}.{pct}.paired_gap_ratio", sp - rd, src)
+            mean_ci(f"jz.{tag}.{pct}.spatial_ratio", sp, src)
+            mean_ci(f"jz.{tag}.{pct}.random_ratio", rd, src)
+        put(f"jz.{tag}.n_cohort.min", jz.n_cohort.min(), src=src); put(f"jz.{tag}.n_cohort.max", jz.n_cohort.max(), src=src)
+except (subprocess.CalledProcessError, FileNotFoundError) as e:
+    print("  (Johnson's branch not fetched; skipping jz.* values)", e)
+
+# Aidan's distance formula vs the corrected one, on a June 2026 rerun of his pipeline that recorded all
+# three metric versions on the same runs (aiden_original/metric_validation/)
+am = pd.read_parquet(ROOT / "aiden_original" / "metric_validation" / "validation_metric_fix_more.parquet")
+am = am.dropna(subset=["old_buggy_inverse", "only_norm_fixed_inverse", "both_fixed_mean_distance"])
+# Correlate WITHIN each experiment (dataset x bias direction). Pooling iris with wine gives r ~ 0.87 for
+# the buggy formula only because wine points are both farther from the origin and more spread out.
+src_am = "aiden_original/metric_validation/validation_metric_fix_more.parquet"
+rb, rf = [], []
+for (dsn, bt), g in am.groupby([am.dataset.str.split("_").str[0], "bias_type"]):
+    rb.append(np.corrcoef(g.old_buggy_inverse, 1 / g.both_fixed_mean_distance)[0, 1])
+    rf.append(np.corrcoef(g.only_norm_fixed_inverse, 1 / g.both_fixed_mean_distance)[0, 1])
+    put(f"aidan.{dsn}.{bt}.r_buggy", rb[-1], n=len(g), src=src_am)
+    put(f"aidan.{dsn}.{bt}.r_fixed", rf[-1], n=len(g), src=src_am)
+put("aidan.r_buggy.min", min(rb), src=src_am); put("aidan.r_buggy.max", max(rb), src=src_am)
+put("aidan.r_fixed.min", min(rf), src=src_am); put("aidan.r_fixed.max", max(rf), src=src_am)
 
 # negative controls
 hc = pd.read_parquet(DEX / "results_healthy_control.parquet")
@@ -105,17 +189,27 @@ for f, lab in (("results_label_noise", "tree"), ("results_label_noise_svm", "svm
             dval(f"ln.{lab}.{ds}.{int(nz*100)}.d_acc", x.vacc, c.vacc, f)
             dval(f"ln.{lab}.{ds}.{int(nz*100)}.d_spread", x.mean_dist, c.mean_dist, f)
         mean_ci(f"ln.{lab}.{ds}.clean.nadv", c.nadv, f)
+        if "nadv_correct" in ln.columns:   # earlier probe: adversarial examples from correctly classified points
+            mean_ci(f"ln.{lab}.{ds}.clean.nadv_correct", c.nadv_correct, f)
+            mean_ci(f"ln.{lab}.{ds}.40.nadv_correct", ln[(ln.dataset == ds) & np.isclose(ln.noise, 0.4)].nadv_correct, f)
 # ratio of accuracy-drop d to spread-rise d at every noise rate (tree), quoted as a range in 4.2
 from stats import cohens_d  # noqa: E402
 ln = pd.read_parquet(DEX / "results_label_noise.parquet")
-ratios = []
+# Every point attacked: spread d sits near 0, so a ratio of effect sizes is meaningless. Count instead the
+# noise rates (10-90%, iris + wine = 18 cells) at which each measurement is separated from clean labels.
+sep_spread, sep_acc, n_cells, max_spread_d = 0, 0, 0, -np.inf
 for ds in ("iris", "wine"):
     c = ln[(ln.dataset == ds) & (ln.noise == 0)]
     for nz in sorted(ln.noise.unique())[1:]:
         x = ln[(ln.dataset == ds) & np.isclose(ln.noise, nz)]
-        ratios.append(-cohens_d(x.vacc, c.vacc) / cohens_d(x.mean_dist, c.mean_dist))
-put("ln.tree.acc_to_spread_d_ratio.min", min(ratios), src="results_label_noise (10-90%, iris+wine)")
-put("ln.tree.acc_to_spread_d_ratio.max", max(ratios), src="results_label_noise (10-90%, iris+wine)")
+        ds_, lo_s, hi_s, _, _ = d_with_ci(x.mean_dist, c.mean_dist)
+        da, lo_a, hi_a, _, _ = d_with_ci(x.vacc, c.vacc)
+        sep_spread += int(lo_s > 0 or hi_s < 0); sep_acc += int(lo_a > 0 or hi_a < 0); n_cells += 1
+        max_spread_d = max(max_spread_d, ds_)
+put("ln.tree.n_cells", n_cells, src="results_label_noise (10-90%, iris+wine)")
+put("ln.tree.n_sep_spread", sep_spread, src="results_label_noise (10-90%, iris+wine)")
+put("ln.tree.n_sep_acc", sep_acc, src="results_label_noise (10-90%, iris+wine)")
+put("ln.tree.max_spread_d", max_spread_d, src="results_label_noise (10-90%, iris+wine)")
 
 lk = pd.read_parquet(DEX / "results_leakage.parquet")
 for ds in ("iris", "wine"):

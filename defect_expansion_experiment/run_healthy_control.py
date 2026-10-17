@@ -46,6 +46,9 @@ OUT = HERE / 'results_healthy_control.parquet'
 _os = importlib.util.spec_from_file_location('ol', HERE.parent / 'outlier_experiment' / 'run_experiment.py')
 _o = importlib.util.module_from_spec(_os); _os.loader.exec_module(_o)
 cluster_stats = _o.cluster_stats
+_ah = importlib.util.spec_from_file_location('ah', HERE / 'attack_all_helper.py')
+_a = importlib.util.module_from_spec(_ah); _ah.loader.exec_module(_a)
+attack_all, flips = _a.attack_all, _a.flips
 
 D = 3                                    # fixed low dimensionality for all conditions
 FRAC = [0.0, 0.5, 0.7]
@@ -111,13 +114,13 @@ def run_cell(name, structure, frac, seed):
         mmask = yv == tc
         min_recall = float((pv[mmask] == tc).mean()) if mmask.sum() else np.nan
         c = pv == yv
-        if c.sum():
-            adv = DecisionTreeAttack(classifier=art).generate(Xv[c])
-            ap = np.argmax(art.predict(adv), axis=1); adv = adv[ap != yv[c]]
-        else:
-            adv = np.empty((0, D))
-        md = cluster_stats(adv)[2] if len(adv) else np.nan
-        folds.append(dict(tacc=tacc, vacc=vacc, min_recall=min_recall, nadv=len(adv), mean_dist=md))
+        adv, _ = attack_all(art, Xv)                     # every test point, model's own prediction
+        flip = flips(art, adv, pv)
+        adv_all, adv_c = adv[flip], adv[c & flip]        # correct-only subset = old pipeline
+        md = cluster_stats(adv_all)[2] if len(adv_all) else np.nan
+        md_c = cluster_stats(adv_c)[2] if len(adv_c) else np.nan
+        folds.append(dict(tacc=tacc, vacc=vacc, min_recall=min_recall, nadv=len(adv_all),
+                          nadv_correct=len(adv_c), mean_dist=md, mean_dist_correct=md_c))
     r = {k: float(np.nanmean([f[k] for f in folds])) for k in folds[0]}
     r.update(dataset=name, tc=int(tc), frac=float(frac), structure=structure, seed=int(seed))
     return r
@@ -134,7 +137,8 @@ def cohend(a, b):
 
 
 def main():
-    cols = ['dataset', 'tc', 'frac', 'structure', 'seed', 'tacc', 'vacc', 'min_recall', 'nadv', 'mean_dist']
+    cols = ['dataset', 'tc', 'frac', 'structure', 'seed', 'tacc', 'vacc', 'min_recall', 'nadv', 'mean_dist',
+            'nadv_correct', 'mean_dist_correct']
     rows, t0 = [], time.time()
     grid = []
     for name in CONDS:
