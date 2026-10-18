@@ -5,6 +5,7 @@ One function per report item. Figures -> report/figures/<name>.pdf (vector, repo
 is typed by hand: every table cell comes from a results file through this module.
 
 Item            Function             Data (all training-only unless stated)
+Fig 1           fig_pipeline         (diagram, no data)
 Table 1         table_protocol       defect_expansion_experiment/results_variance.parquet (both protocols)
 Fig 2           fig_coverage_gap     defect_expansion_experiment/results_variance.parquet
 Fig 3           fig_blind_spots      outlier_experiment/results_kplateau(+_baseline).parquet,
@@ -17,8 +18,10 @@ Fig 5           fig_dimensionality   defect_expansion_experiment/results_fitvsme
 Table 2         table_design         seed counts and levels read from every grid listed in the table
 Table 3         table_panel          results_variance, results_label_noise, outlier_experiment/results_kplateau
                                      (+_baseline), results_shortcut, results_leakage (tree + white-box only)
-Table A1        table_scorecard      results_variance(_svm), results_p1(_rf) [earlier pipeline], results_attack_all
-Table A2        table_sensitivity    same files: every-point columns vs the *_correct columns
+Scorecard       table_scorecard      results_variance(_svm), results_p1(_rf) [earlier pipeline], results_attack_all(_svm)
+                                     (in Results 4.4 since 2026-10-18; was Table A1)
+Sensitivity     table_sensitivity    same files: every-point columns vs the *_correct columns
+                                     (in Methods 3.4 since 2026-10-18; was Table A2)
 
 Probe (2026-10-16 switch): every test point is attacked from the model's own prediction and points
 whose prediction changed are kept. The all-points values keep the old column names (mean_dist,
@@ -44,7 +47,8 @@ ROOT = Path(__file__).resolve().parent.parent
 DEX = ROOT / "defect_expansion_experiment"
 FIG = ROOT / "report" / "figures"
 TAB = ROOT / "report" / "tables"
-plt.style.use(ROOT / "tools" / "report.mplstyle")
+plt.style.use(Path(__file__).resolve().parent / "report.mplstyle")
+FIG.mkdir(parents=True, exist_ok=True); TAB.mkdir(parents=True, exist_ok=True)
 
 # Contested class per dataset (lowest clean recall) and the feature the spatial hole is cut along.
 # Fixed in run_variance.py CFG; repeated here only for labelling.
@@ -80,7 +84,7 @@ def table_protocol():
                 sp, rd = s[s.structure == "spatial"], s[s.structure == "random"]
                 d, lo, hi, ns, nr = d_with_ci(sp.mean_dist, rd.mean_dist)
                 assert ns == nr == 30, (ds, frac, proto, ns, nr)
-                dtxt = f"{d:+.2f}".replace("-", "$-$") + ("$^{*}$" if lo > 0 else "")
+                dtxt = f"{d:+.2f}".replace("-", "$-$") + ("$^{*}$" if (lo > 0 or hi < 0) else "")
                 cells += [f"{ci95(sp.vacc)[0]:.2f}", f"{sp.nadv.mean():.1f}", dtxt]
             lines.append(f"{ds.capitalize() if frac == 0.6 else ''} & {int(frac * 100)}\\% & " + " & ".join(cells) + r"\\")
         if ds == "iris":
@@ -121,7 +125,7 @@ def fig_coverage_gap():
         ax.set_title(f"({'ab'[k]}) Spread, {ds}")
         ax.set_xlabel("Class deleted (%)")
         ax.set_xticks([0, 20, 40, 60, 80])
-        ax.set_ylabel("Spread / clean spread" if k == 0 else "")
+        ax.set_ylabel("Spread / defect-free spread" if k == 0 else "")
     ax = axes[2]
     for ds, ls in (("iris", "-"), ("wine", "--")):
         tc = CONTESTED[ds]["tc"]
@@ -193,7 +197,7 @@ def fig_blind_spots():
     ax.set_ylim(-1.5, 3000)                     # headroom above the curves for the legend
     ax.set_yticks([-1, 0, 1, 10, 100]); ax.set_yticklabels(["$-1$", "0", "1", "10", "100"])
     ax.axhline(0, color="0.4", lw=0.8, ls=":")
-    ax.set_title("(b) Label noise: effect size vs clean")
+    ax.set_title("(b) Label noise: effect size vs no noise")
     ax.set_xlabel("Training labels flipped (%)")
     ax.set_ylabel("Cohen's $d$ (symmetric log)")
     ax.plot([], [], "-", color=C_SPATIAL, label="Spread change")
@@ -332,7 +336,7 @@ def fig_dimensionality():
     ax.plot(ks, [t[0] for t in st], "o-", ms=3, color="0.2")
     ax.fill_between(ks, [t[1] for t in st], [t[2] for t in st], color="0.2", alpha=0.15, lw=0)
     ax.set_xticks(ks)
-    ax.set_title("(c) Wine, clean accuracy")
+    ax.set_title("(c) Wine, defect-free accuracy")
     ax.set_xlabel("Features kept ($k$)"); ax.set_ylabel("Test accuracy (no defect)")
     fig.savefig(FIG / "dimensionality.pdf")
     fig.savefig(ROOT / "analysis" / "_preview_dimensionality.png", dpi=200)
@@ -462,7 +466,7 @@ def table_scorecard():
             if min(na, nb) < 5:          # bootstrap CI of d is degenerate with so few runs
                 dtxt = "too few runs"
             elif np.isfinite(lo):
-                dtxt = (f"{d:+.2f} [{lo:+.2f}, {hi:+.2f}]" + ("$^{*}$" if lo > 0 else "")).replace("-", "$-$")
+                dtxt = (f"{d:+.2f} [{lo:+.2f}, {hi:+.2f}]" + ("$^{*}$" if (lo > 0 or hi < 0) else "")).replace("-", "$-$")
             else:
                 dtxt = "--"
             ra = f"{np.nanmean(a) / base:.2f}" if a.notna().any() else "--"
@@ -481,18 +485,28 @@ def table_scorecard():
             sub = df[(df.protocol == "train_only") & (df.dataset == ds) & ((df.tc == tc) | np.isclose(df.frac, 0))]
             rows += block(f"{ds}, {lab}", sub, [0.6, 0.8, 0.9]) + [r"\addlinespace"]
     rows += block("iris, tree + white-box, petal length$^{\dagger}$", plen, [0.6, 0.8, 0.9]) + [r"\addlinespace"]
-    for model, lab in (("tree", "tree + black-box$^{\ddagger}$"),):
-        sub = p1[(p1.model == model) & ((p1.tc == 2) | (p1.structure == "baseline"))]
-        rows += block(f"iris, {lab}", sub, [0.5, 0.85, 0.95]) + [r"\addlinespace"]
-    rows += block("iris, forest + black-box$^{\ddagger}$", rf[(rf.tc == 2) | (rf.structure == "baseline")], [0.5, 0.85, 0.95])
-    tex = [r"\begin{tabular}{p{0.25\linewidth}cccc}", r"\toprule",
-           r"Setting & Deleted & Runs & Spread / clean & $d$ [95\% CI] \\",
-           r" & & s / r & s / r & s vs r \\", r"\midrule"] + rows + [
+    aas = pd.read_parquet(DEX / "results_attack_all_svm.parquet")
+    plen_svm = aas[aas.dataset == "iris_plen"].rename(columns={"spread_all": "mean_dist"})
+    rows += block(r"iris, SVM + black-box, petal length$^{\dagger\S}$", plen_svm, [0.6, 0.8, 0.9])
+    head = [r"\begin{tabular}{p{0.25\linewidth}cccc}", r"\toprule",
+            r"Setting & Deleted & Runs & Spread ratio & $d$ [95\% CI] \\",
+            r" & & s / r & s / r & s vs r \\", r"\midrule"]
+    common = r"s: spatial hole; r: random deletion of the same count. $^{*}$CI excludes 0. $d$ is reported only when both arms have at least 5 valid runs. "
+    tex = head + rows + [
            r"\bottomrule", r"\end{tabular}", r"\par\smallskip",
-           r"{\footnotesize s: spatial hole; r: random deletion of the same count. $^{*}$CI excludes 0. $d$ is reported only when both arms have at least 5 valid runs. $^{\dagger}$Unstandardised iris, hole cut along petal length (the other rows use "
-           r"petal width). $^{\ddagger}$Earlier pipeline: only correctly classified test points attacked; black-box tree 10 seeds, forest 3 seeds. Other rows: every test point attacked, 30 seeds.\par}"]
+           r"{\footnotesize " + common + r"$^{\dagger}$Unstandardised iris, hole cut along petal length (the other rows use "
+           r"petal width). $^{\S}$Second run of the SVM experiment (Section~\ref{sec:results-transfer}); the other SVM rows come from the first. Every test point attacked, 30 seeds.\par}"]
     (TAB / "scorecard.tex").write_text("\n".join(tex) + "\n", encoding="utf-8")
     print("  wrote report/tables/scorecard.tex")
+    # earlier pipeline (correct-only probe, before the 2026-10-16 switch): black-box tree and forest -> Appendix A
+    early = block("iris, tree + black-box", p1[(p1.model == "tree") & ((p1.tc == 2) | (p1.structure == "baseline"))],
+                  [0.5, 0.85, 0.95]) + [r"\addlinespace"]
+    early += block("iris, forest + black-box", rf[(rf.tc == 2) | (rf.structure == "baseline")], [0.5, 0.85, 0.95])
+    tex = head + early + [
+           r"\bottomrule", r"\end{tabular}", r"\par\smallskip",
+           r"{\footnotesize " + common + r"Earlier pipeline: only correctly classified test points attacked; black-box tree 10 seeds, forest 3 seeds.\par}"]
+    (TAB / "scorecard_earlier.tex").write_text("\n".join(tex) + "\n", encoding="utf-8")
+    print("  wrote report/tables/scorecard_earlier.tex")
 
 
 # ------------------------------------------------------------------------------------------
@@ -549,7 +563,46 @@ def table_sensitivity():
     print("  wrote report/tables/sensitivity.tex (+ analysis/sensitivity_table_values.csv)")
 
 
-ITEMS = {f.__name__: f for f in (table_protocol, table_design, fig_coverage_gap, fig_blind_spots,
+# ------------------------------------------------------------------------------------------
+# Fig 1 - the measurement pipeline (diagram; no data)
+# ------------------------------------------------------------------------------------------
+def fig_pipeline():
+    from matplotlib.patches import FancyBboxPatch
+    W, H = 6.3, 2.45
+    fig = plt.figure(figsize=(W, H)); ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H); ax.axis("off")
+
+    def box(x, y, w, h, text, face="#F2F2F2", edge="0.35", ls="-"):
+        ax.add_patch(FancyBboxPatch((x - w / 2, y - h / 2), w, h, boxstyle="round,pad=0.0,rounding_size=0.07",
+                                    fc=face, ec=edge, lw=0.9, ls=ls))
+        ax.text(x, y, text, ha="center", va="center", fontsize=10, linespacing=1.15)
+
+    def arrow(x0, y0, x1, y1):
+        ax.annotate("", xy=(x1, y1), xytext=(x0, y0),
+                    arrowprops=dict(arrowstyle="-|>", lw=0.9, color="0.25", shrinkA=0, shrinkB=0, mutation_scale=9))
+
+    w, h, yt, yb = 1.08, 0.78, 1.95, 0.5
+    xs = [0.56, 1.85, 3.14, 4.43, 5.72]
+    top = ["Dataset\n(iris or wine),\n5-fold split", "Inject defect\ninto the\ntraining fold",
+           "Fit model\n(tree or SVM)", "Attack every\ntest point", "Keep changed\npredictions:\ncloud $C$"]
+    for x, t in zip(xs, top):
+        box(x, yt, w, h, t)
+    for a, b in zip(xs[:-1], xs[1:]):
+        arrow(a + w / 2, yt, b - w / 2, yt)
+    out = "#E8F1FA"
+    box(xs[2], yb, 1.22, h, "Test accuracy,\nper-class recall", face=out)
+    box(xs[3], yb, w, h, "OPTICS\nclusters:\nspread $S$", face=out)
+    box(xs[4], yb, w, h, "Per-axis\nshare $\\phi_a$", face=out)
+    arrow(xs[2], yt - h / 2, xs[2], yb + h / 2)
+    arrow(xs[4], yt - h / 2, xs[4], yb + h / 2)
+    arrow(xs[4] - 0.25, yt - h / 2, xs[3] + 0.15, yb + h / 2)
+    box(1.2, yb, 2.2, h, "Each measurement compared\nwith the same split trained\nwithout the defect", face="white", ls="--")
+    fig.savefig(FIG / "pipeline.pdf")
+    fig.savefig(ROOT / "analysis" / "_preview_pipeline.png", dpi=200)
+    plt.close(fig)
+    print("  wrote report/figures/pipeline.pdf")
+
+
+ITEMS = {f.__name__: f for f in (fig_pipeline, table_protocol, table_design, fig_coverage_gap, fig_blind_spots,
                                     fig_shortcut, fig_dimensionality, table_panel, table_scorecard,
                                     table_sensitivity)}
 

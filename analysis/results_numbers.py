@@ -64,6 +64,11 @@ for ds in ("iris", "wine"):
         x = aas[(aas.dataset == ds) & np.isclose(aas.frac, frac)]
         dval(f"cg.svm_run2.{ds}.{int(frac*100)}.d_spread_sp_vs_rd", x[x.structure == "spatial"].spread_all,
              x[x.structure == "random"].spread_all, "results_attack_all_svm")
+# the same run also cut the iris hole along petal length (raw features, as in the tree setting iris_plen)
+for frac in (0.4, 0.6, 0.8, 0.9):
+    x = aas[(aas.dataset == "iris_plen") & np.isclose(aas.frac, frac)]
+    dval(f"cg.svm_run2.plen.{int(frac*100)}.d_spread_sp_vs_rd", x[x.structure == "spatial"].spread_all,
+         x[x.structure == "random"].spread_all, "results_attack_all_svm (iris_plen)")
 # run-to-run variation of HopSkipJump (Discussion 5.5): wine, 80% deletion, mean spatial-minus-random
 # spread on the 15 seeds of the original (archived) grid vs the same seeds in the 2026-10-15 rerun.
 # Both files use the earlier correct-only probe, so the comparison isolates the attack's randomness.
